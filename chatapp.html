@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Pulse Chat</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS for WebRTC signaling and connections -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+        }
+        .bg-animate {
+            animation: pulse-slow 8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden relative">
+
+    <!-- Animated Background Elements -->
+    <div class="absolute inset-0 bg-gradient-to-tr from-indigo-950/40 via-slate-950 to-emerald-950/30 z-0"></div>
+    <div class="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-3xl bg-animate top-[-10%] left-[-10%] z-0"></div>
+    <div class="absolute w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-3xl bg-animate bottom-[-10%] right-[-10%] z-0"></div>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-md p-6 bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl z-10 transition-all duration-500 flex flex-col h-[600px]">
+        
+        <!-- Connection Lobby Screen -->
+        <div id="lobbyScreen" class="flex flex-col flex-grow justify-between py-4">
+            <div class="text-center">
+                <div class="inline-flex p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 mb-3 animate-bounce">
+                    <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Secure P2P Chat</h1>
+                <p class="text-sm text-slate-400 mt-1">Direct device-to-device messaging</p>
+            </div>
+
+            <!-- Your Code Section -->
+            <div class="bg-slate-950/50 border border-slate-800 p-4 rounded-xl text-center my-6">
+                <span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Your Connection Code</span>
+                <div class="flex items-center justify-center gap-2">
+                    <span id="myPeerId" class="text-xl font-mono font-bold text-indigo-400 tracking-wider">Generating...</span>
+                    <button id="copyBtn" class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition hidden" title="Copy Code">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Connect to Peer Form -->
+            <div class="space-y-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Connect to a Peer</label>
+                <div class="relative">
+                    <input type="text" id="peerIdInput" placeholder="Paste friend's code here..." 
+                           class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 pl-11 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-mono tracking-wider">
+                    <div class="absolute left-4 top-3.5 text-slate-600">
+                        <i data-lucide="link-2" class="w-4 h-4"></i>
+                    </div>
+                </div>
+                <button id="connectBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Establish Connection
+                </button>
+            </div>
+
+            <div id="statusMessage" class="text-xs text-center text-slate-500 mt-4 h-4">Connecting to signaling network...</div>
+        </div>
+
+        <!-- Active Chat Screen (Initially Hidden) -->
+        <div id="chatScreen" class="hidden flex-col h-full">
+            <!-- Chat Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <div>
+                        <h2 class="text-sm font-semibold text-white">Connected</h2>
+                        <span id="remotePeerDisplay" class="text-[10px] font-mono text-slate-500"></span>
+                    </div>
+                </div>
+                <button id="disconnectBtn" class="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl border border-rose-500/10 transition" title="Disconnect">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="messageBox" class="flex-grow overflow-y-auto my-4 space-y-3 pr-1 scrollbar-thin text-sm">
+                <!-- Messages populate here dynamically -->
+            </div>
+
+            <!-- Message Input Tray -->
+            <form id="msgForm" class="flex gap-2">
+                <input type="text" id="msgInput" placeholder="Type a secure message..." autocomplete="off"
+                       class="flex-grow bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center active:scale-[0.98]">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // Generate a random clean VARCHAR string for the connection OTP code
+        function generateVarcharCode(length = 6) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Clean character set (No confusing O/0 or I/1)
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // DOM Elements
+        const lobbyScreen = document.getElementById('lobbyScreen');
+        const chatScreen = document.getElementById('chatScreen');
+        const myPeerIdEl = document.getElementById('myPeerId');
+        const copyBtn = document.getElementById('copyBtn');
+        const peerIdInput = document.getElementById('peerIdInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const remotePeerDisplay = document.getElementById('remotePeerDisplay');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const messageBox = document.getElementById('messageBox');
+        const msgForm = document.getElementById('msgForm');
+        const msgInput = document.getElementById('msgInput');
+
+        const customId = generateVarcharCode(6);
+        let peer = null;
+        let conn = null;
+
+        // Initialize PeerJS
+        // Uses PeerJS public cloud servers for signaling connection handshakes
+        peer = new Peer(customId);
+
+        peer.on('open', (id) => {
+            myPeerIdEl.textContent = id;
+            copyBtn.classList.remove('hidden');
+            statusMessage.textContent = "Ready to connect. Share your code or enter a friend's.";
+        });
+
+        peer.on('error', (err) => {
+            console.error(err);
+            statusMessage.textContent = `Connection error occurred.`;
+        });
+
+        // Handle incoming connection requests (Person B gets called)
+        peer.on('connection', (incomingConn) => {
+            if (conn) { 
+                incomingConn.close(); // Reject if already in a chat
+                return; 
+            }
+            conn = incomingConn;
+            setupConnectionHandlers();
+        });
+
+        // Click handler to initiate connection (Person A calls Person B)
+        connectBtn.addEventListener('click', () => {
+            const remoteId = peerIdInput.value.trim().toUpperCase();
+            if (!remoteId) {
+                statusMessage.textContent = "Please enter a valid code first.";
+                return;
+            }
+            if (remoteId === customId) {
+                statusMessage.textContent = "You can't connect to your own code.";
+                return;
+            }
+
+            statusMessage.textContent = "Knocking on peer's door...";
+            conn = peer.connect(remoteId);
+            setupConnectionHandlers();
+        });
+
+        // Setup signaling data streams once connected
+        function setupConnectionHandlers() {
+            conn.on('open', () => {
+                // UI Screen swap animation
+                lobbyScreen.classList.add('hidden');
+                chatScreen.classList.remove('hidden');
+                chatScreen.classList.add('flex');
+                remotePeerDisplay.textContent = `Peer ID: ${conn.peer}`;
+                
+                appendSystemMessage("Secure End-to-End Link Established.");
+            });
+
+            conn.on('data', (data) => {
+                appendMessage(data, 'remote');
+            });
+
+            conn.on('close', () => {
+                handleDisconnect();
+            });
+
+            conn.on('error', () => {
+                handleDisconnect();
+            });
+        }
+
+        // Sending a message
+        msgForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = msgInput.value.trim();
+            if (!text || !conn) return;
+
+            conn.send(text);
+            appendMessage(text, 'local');
+            msgInput.value = '';
+        });
+
+        // Append UI Chat message nodes
+        function appendMessage(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start');
+
+            const msgBubble = document.createElement('div');
+            msgBubble.classList.add('max-w-[80%]', 'rounded-2xl', 'px-4', 'py-2.5', 'shadow-sm', 'break-words');
+            
+            if (sender === 'local') {
+                msgBubble.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none');
+            } else {
+                msgBubble.classList.add('bg-slate-800', 'text-slate-200', 'rounded-bl-none', 'border', 'border-slate-700/50');
+            }
+
+            msgBubble.textContent = text;
+            wrapper.appendChild(msgBubble);
+            messageBox.appendChild(wrapper);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+
+        function appendSystemMessage(text) {
+            const sysNode = document.createElement('div');
+            sysNode.classList.add('text-[11px]', 'text-center', 'text-indigo-400/80', 'bg-indigo-500/5', 'border', 'border-indigo-500/10', 'py-1', 'px-3', 'rounded-lg', 'my-2', 'mx-auto', 'w-max');
+            sysNode.textContent = text;
+            messageBox.appendChild(sysNode);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+
+        // Close connection cleanly if a user targets the exit button
+        disconnectBtn.addEventListener('click', () => {
+            if (conn) conn.close();
+            handleDisconnect();
+        });
+
+        // Handle page closures or navigating away to terminate links for the remote peer instantly
+        window.addEventListener('beforeunload', () => {
+            if (conn) conn.close();
+        });
+
+        function handleDisconnect() {
+            conn = null;
+            messageBox.innerHTML = '';
+            chatScreen.classList.remove('flex');
+            chatScreen.classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
+            statusMessage.textContent = "Disconnected from previous session.";
+            peerIdInput.value = '';
+        }
+
+        // Copy Code Clipboard utility
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(customId);
+            const icon = copyBtn.querySelector('i');
+            icon.setAttribute('data-lucide', 'check');
+            copyBtn.classList.add('text-emerald-400');
+            lucide.createIcons();
+            setTimeout(() => {
+                icon.setAttribute('data-lucide', 'copy');
+                copyBtn.classList.remove('text-emerald-400');
+                lucide.createIcons();
+            }, 2000);
+        });
+
+        // Initialize Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
