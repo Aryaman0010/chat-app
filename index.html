@@ -3,166 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Workspace Portal</title>
+    <title>Enterprise Portal Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @keyframes pulse-slow {
-            0%, 100% { transform: scale(1); opacity: 0.15; }
-            50% { transform: scale(1.1); opacity: 0.3; }
-        }
-        .bg-animate { animation: pulse-slow 12s infinite ease-in-out; }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.45);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .glass-input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .glass-input:focus {
-            border-color: rgba(99, 102, 241, 0.5);
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
-        }
-    </style>
 </head>
-<body class="bg-[#030712] text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden relative">
+<body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden">
 
-    <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#0b0f19] to-indigo-950/40 z-0"></div>
-    <div class="absolute w-[600px] h-[600px] rounded-full bg-blue-500/10 blur-[120px] bg-animate -top-20 -left-20 z-0"></div>
-    <div class="absolute w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[120px] bg-animate -bottom-20 -right-20 z-0"></div>
-
-    <main class="w-full max-w-lg p-6 glass-panel rounded-2xl shadow-2xl z-10 transition-all duration-500 flex flex-col h-[650px]">
+    <main class="w-full max-w-2xl h-[700px] bg-slate-900 border border-slate-800 rounded-xl shadow-xl flex flex-col overflow-hidden">
         
-        <!-- STEP 1: ROLE SELECTION -->
-        <div id="roleScreen" class="flex flex-col flex-grow justify-center items-center text-center space-y-6">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">Workspace Portal</h1>
-                <p class="text-sm text-slate-400 mt-2">Select your operational identity to begin</p>
-            </div>
-            <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
-                <button onclick="selectRole('boss')" class="flex flex-col items-center justify-center p-5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 active:scale-[0.98] transition">
-                    <i data-lucide="crown" class="w-10 h-10 text-indigo-400 mb-2"></i>
-                    <span class="font-bold tracking-wide">BOSS</span>
-                </button>
-                <button onclick="selectRole('employee')" class="flex flex-col items-center justify-center p-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 active:scale-[0.98] transition">
-                    <i data-lucide="briefcase" class="w-10 h-10 text-cyan-400 mb-2"></i>
-                    <span class="font-bold tracking-wide">EMPLOYEE</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- STEP 2: LOBBY -->
-        <div id="lobbyScreen" class="hidden flex-col flex-grow justify-between py-2">
-            <div class="text-center">
-                <span id="roleBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-2"></span>
-                <h2 class="text-xl font-bold text-white">Establish Secure Feed</h2>
-            </div>
-
-            <div id="bossLobby" class="hidden space-y-4 my-auto">
-                <div class="glass-input p-4 rounded-xl text-center">
-                    <span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Your Corporate Access Key</span>
-                    <div class="flex items-center justify-center gap-2">
-                        <span id="myPeerId" class="text-2xl font-mono font-bold text-indigo-400 tracking-widest">Generating...</span>
-                        <button id="copyBtn" class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-white/10 transition">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
-                        </button>
-                    </div>
+        <!-- HEADER ARCHITECTURE -->
+        <header class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-3 w-3 rounded-full bg-slate-700" id="connectionStatusDot"></div>
+                <div>
+                    <h1 class="text-sm font-semibold tracking-wider uppercase text-slate-200">Enterprise Operations Portal</h1>
+                    <p class="text-xs text-slate-500" id="portalSubheading">Status: Terminal Offline</p>
                 </div>
-                <p class="text-xs text-center text-slate-400">Provide this passcode to your employee to authorize connection.</p>
             </div>
-
-            <div id="employeeLobby" class="hidden space-y-4 my-auto">
-                <div class="space-y-2">
-                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Enter Boss's Credentials</label>
-                    <input type="text" id="peerIdInput" placeholder="Paste Boss passcode..." 
-                           class="w-full glass-input rounded-xl py-3 px-4 text-white text-center font-mono tracking-widest focus:outline-none">
-                </div>
-                <button id="connectBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 active:scale-[0.98] text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20">
-                    <i data-lucide="log-in" class="w-4 h-4"></i> Connect to Server Hub
-                </button>
-            </div>
-
-            <div id="statusMessage" class="text-xs text-center text-slate-500 h-4">Initializing cryptography engine...</div>
-        </div>
-
-        <!-- STEP 3: LIVE ACTIVE DASHBOARD -->
-        <div id="chatScreen" class="hidden flex-col h-full space-y-3">
-            <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                <div class="flex items-center gap-3">
-                    <span class="relative flex h-2.5 w-2.5">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                    </span>
-                    <span id="activeUserBadge" class="text-xs font-bold px-2 py-0.5 rounded uppercase"></span>
-                </div>
-                
-                <div class="flex gap-2 items-center">
-                    <!-- Boss Controls -->
-                    <div id="bossControls" class="hidden flex gap-1 items-center">
-                        <select id="cameraFacingSelect" onchange="onBossChangeCamera()" class="bg-slate-900 border border-white/10 text-slate-300 text-xs rounded-xl px-2 py-1.5 focus:outline-none">
-                            <option value="user">Front Cam</option>
-                            <option value="environment">Back Cam</option>
+            <div class="flex items-center gap-3">
+                <div id="activeControls" class="hidden flex items-center gap-2">
+                    <!-- Boss Control Group -->
+                    <div id="bossControls" class="hidden flex items-center gap-2">
+                        <select id="cameraFacingSelect" onchange="onBossChangeCamera()" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-indigo-500">
+                            <option value="user">Front View</option>
+                            <option value="environment">Rear View</option>
                         </select>
-                        <button onclick="bossDemandsEmployeeFeed()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition flex items-center gap-1.5" title="Monitor Employee Camera">
-                            <i data-lucide="video" class="w-4 h-4"></i> Monitor Feed
+                        <button onclick="bossDemandsEmployeeFeed()" class="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded transition flex items-center gap-1.5">
+                            <i data-lucide="video" class="w-3.5 h-3.5"></i> Request Feed
                         </button>
                     </div>
-                    <!-- Employee Controls -->
+                    <!-- Employee Control Group -->
                     <div id="employeeControls" class="hidden">
-                        <button id="requestCallBtn" class="px-3 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl transition flex items-center gap-1.5">
-                            <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Request Boss Video
+                        <button id="requestCallBtn" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-400"></i> Broadcast Request
                         </button>
                     </div>
-                    <button id="disconnectBtn" class="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition">
-                        <i data-lucide="power" class="w-4 h-4"></i>
+                    <button id="disconnectBtn" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded border border-transparent hover:border-slate-700 transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
+        </header>
 
-            <!-- Streaming Viewports Layer -->
-            <div id="videoContainer" class="hidden grid grid-cols-2 gap-2 glass-input p-2 rounded-xl border border-white/5 relative">
-                <div id="localVideoWrapper">
-                    <span class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-slate-400 z-10">Your Camera</span>
-                    <video id="localVideo" autoplay muted playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
-                </div>
-                <div id="remoteVideoWrapper">
-                    <span id="remoteVideoLabel" class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-indigo-400 z-10">Remote Feed</span>
-                    <video id="remoteVideo" autoplay playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
+        <!-- CONTAINER BODY -->
+        <div class="flex-grow flex flex-col relative bg-slate-900/50">
+            
+            <!-- STEP 1: IDENTITY INITIALIZATION -->
+            <div id="roleScreen" class="absolute inset-0 bg-slate-900 z-20 flex flex-col justify-center items-center p-6 text-center">
+                <div class="max-w-md space-y-6">
+                    <div class="space-y-2">
+                        <i data-lucide="shield" class="w-12 h-12 text-indigo-500 mx-auto"></i>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Identity Verification Required</h2>
+                        <p class="text-sm text-slate-400">Select your authenticated profile role to initialize the peer-to-peer signaling pathway.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <button onclick="selectRole('boss')" class="flex flex-col items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-950 hover:border-indigo-500/50 hover:bg-slate-900/50 transition group">
+                            <i data-lucide="award" class="w-8 h-8 text-slate-400 group-hover:text-indigo-400 mb-2"></i>
+                            <span class="text-sm font-semibold tracking-wide uppercase text-slate-200">Executive</span>
+                        </button>
+                        <button onclick="selectRole('employee')" class="flex flex-col items-center justify-center p-6 rounded-lg border border-slate-800 bg-slate-950 hover:border-indigo-500/50 hover:bg-slate-900/50 transition group">
+                            <i data-lucide="users" class="w-8 h-8 text-slate-400 group-hover:text-indigo-400 mb-2"></i>
+                            <span class="text-sm font-semibold tracking-wide uppercase text-slate-200">Personnel</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Messages Stream -->
-            <div id="messageBox" class="flex-grow overflow-y-auto space-y-2 pr-1 text-sm my-1"></div>
+            <!-- STEP 2: PAIRING LOBBY -->
+            <div id="lobbyScreen" class="absolute inset-0 bg-slate-900 z-10 hidden flex-col justify-center items-center p-6">
+                <div class="w-full max-w-sm space-y-6">
+                    <div class="text-center space-y-1">
+                        <h3 class="text-base font-semibold text-white">Establish Remote Operations Link</h3>
+                        <p class="text-xs text-slate-400">Configure connection architecture details below.</p>
+                    </div>
 
-            <!-- Message Input Form -->
-            <form id="msgForm" class="flex gap-2 items-center" onsubmit="sendMessage(event)">
-                <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecord()" class="bg-slate-800 text-slate-300 border border-white/10 p-3 rounded-xl hover:bg-slate-700 transition flex items-center justify-center">
-                    <i id="micIcon" data-lucide="mic" class="w-4 h-4"></i>
-                </button>
-                <input type="text" id="msgInput" placeholder="Transmit data string..." autocomplete="off"
-                       class="flex-grow glass-input rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none text-sm">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center active:scale-[0.98]">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                </button>
-            </form>
+                    <div id="bossLobby" class="hidden space-y-3">
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-lg text-center space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">System Connection Key</span>
+                            <div class="flex items-center justify-center gap-3">
+                                <span id="myPeerId" class="text-xl font-mono font-bold text-indigo-400 tracking-wider">Generating Link...</span>
+                                <button id="copyBtn" class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition" title="Copy Key">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 text-center">Distribute this token to the target terminal unit to complete authorization handshake.</p>
+                    </div>
+
+                    <div id="employeeLobby" class="hidden space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Node Credentials</label>
+                            <input type="text" id="peerIdInput" placeholder="Enter alphanumeric access token..." 
+                                   class="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white text-center font-mono tracking-wider focus:outline-none focus:border-indigo-500 text-sm">
+                        </div>
+                        <button id="connectBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded transition flex items-center justify-center gap-2 text-sm">
+                            <i data-lucide="link" class="w-4 h-4"></i> Initialize Network Sync
+                        </button>
+                    </div>
+
+                    <div id="statusMessage" class="text-[11px] font-mono text-center text-slate-500">Awaiting role initialization parameters...</div>
+                </div>
+            </div>
+
+            <!-- VIDEO PIPELINE LAYER -->
+            <div id="videoContainer" class="hidden grid-cols-2 gap-3 p-4 border-b border-slate-800 bg-slate-950/60 relative">
+                <div id="localVideoWrapper" class="relative bg-slate-900 rounded border border-slate-800 overflow-hidden h-36">
+                    <span class="absolute top-2 left-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] font-medium text-slate-400 z-10">Local Camera Out</span>
+                    <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                </div>
+                <div id="remoteVideoWrapper" class="relative bg-slate-900 rounded border border-slate-800 overflow-hidden h-36">
+                    <span id="remoteVideoLabel" class="absolute top-2 left-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] font-medium text-indigo-400 z-10">Incoming Transmission</span>
+                    <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                </div>
+            </div>
+
+            <!-- TIMELINE CHAT STREAM -->
+            <div id="messageBox" class="flex-grow overflow-y-auto p-6 space-y-4"></div>
+
+            <!-- STATUS AND TYPING REGION -->
+            <div id="typingIndicatorBar" class="h-5 px-6 text-xs text-slate-500 italic flex items-center bg-transparent transition-opacity duration-200 opacity-0">
+                Remote unit is inputting data...
+            </div>
+
+            <!-- INTERFACE INPUT CONSOLE -->
+            <footer class="p-4 bg-slate-950 border-t border-slate-800">
+                <form id="msgForm" class="flex gap-2 items-center" onsubmit="sendMessage(event)">
+                    <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecord()" class="bg-slate-900 border border-slate-800 text-slate-400 p-2.5 rounded hover:bg-slate-800 hover:text-white transition flex items-center justify-center">
+                        <i id="micIcon" data-lucide="mic" class="w-4 h-4"></i>
+                    </button>
+                    <input type="text" id="msgInput" placeholder="Type a message or insert emojis..." autocomplete="off" oninput="sendTypingSignal()"
+                           class="flex-grow bg-slate-900 border border-slate-800 rounded py-2.5 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded transition flex items-center justify-center">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </footer>
         </div>
     </main>
 
-    <!-- Call Overlay Popup (Only for Boss when Employee asks to see them) -->
-    <div id="incomingCallModal" class="hidden absolute inset-0 z-50 bg-black/70 backdrop-blur-md flex flex-col justify-center items-center">
-        <div class="glass-panel p-6 rounded-2xl w-80 text-center space-y-4 border border-white/20">
-            <div class="animate-ping p-2 bg-cyan-500/20 text-cyan-400 rounded-full w-fit mx-auto">
-                <i data-lucide="phone-call" class="w-8 h-8"></i>
+    <!-- INTERFACE NOTIFICATION DIALOG -->
+    <div id="incomingCallModal" class="hidden absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col justify-center items-center">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl w-80 text-center space-y-4 shadow-2xl">
+            <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-full w-fit mx-auto">
+                <i data-lucide="phone-forwarded" class="w-6 h-6"></i>
             </div>
-            <h3 class="font-bold text-lg text-white">Employee Requests Your Feed</h3>
-            <p class="text-xs text-slate-400">The employee wants to view your webcam stream.</p>
-            <div class="flex gap-2">
-                <button id="rejectCallBtn" class="flex-1 bg-rose-600/20 hover:bg-rose-600 text-rose-200 py-2 rounded-xl transition text-sm">Deny</button>
-                <button id="acceptCallBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl transition text-sm font-bold">Transmit Feed</button>
+            <div>
+                <h3 class="font-semibold text-sm text-white">Stream Request Inbound</h3>
+                <p class="text-xs text-slate-400 mt-1">Personnel terminal requests interactive audio/video syncing link.</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button id="rejectCallBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs font-medium transition">Ignore</button>
+                <button id="acceptCallBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-xs font-semibold transition">Accept</button>
             </div>
         </div>
     </div>
@@ -174,11 +166,15 @@
         let currentCall = null;
         let localStream = null;
         let expectingSilentFeed = false;
+        let savedBossPeerId = ''; 
+        let currentFacingMode = 'user';
         
-        // Voice Note States
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
+        
+        let typingTimeout = null;
+        let isTyping = false;
 
         function generateCode(len = 6) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -190,7 +186,8 @@
         const customId = generateCode(6);
         const roleScreen = document.getElementById('roleScreen');
         const lobbyScreen = document.getElementById('lobbyScreen');
-        const chatScreen = document.getElementById('chatScreen');
+        const messageBox = document.getElementById('messageBox');
+        const typingIndicatorBar = document.getElementById('typingIndicatorBar');
         
         function selectRole(role) {
             myRole = role;
@@ -198,17 +195,28 @@
             lobbyScreen.classList.remove('hidden');
             lobbyScreen.classList.add('flex');
 
-            const badge = document.getElementById('roleBadge');
+            const statusDot = document.getElementById('connectionStatusDot');
+            const subHeading = document.getElementById('portalSubheading');
+
             if (role === 'boss') {
-                badge.textContent = 'Identity: Executive (Boss)';
-                badge.classList.add('bg-indigo-500/20', 'text-indigo-300', 'border', 'border-indigo-500/30');
+                subHeading.textContent = 'Status: Executive Hub Mode';
+                statusDot.className = "h-3 w-3 rounded-full bg-indigo-500";
                 document.getElementById('bossLobby').classList.remove('hidden');
                 initPeer(customId);
             } else {
-                badge.textContent = 'Identity: Personnel (Employee)';
-                badge.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border', 'border-cyan-500/30');
+                subHeading.textContent = 'Status: Personnel Unit Mode';
+                statusDot.className = "h-3 w-3 rounded-full bg-slate-600";
                 document.getElementById('employeeLobby').classList.remove('hidden');
                 initPeer();
+                window.addEventListener('beforeunload', preventEmployeeExit);
+            }
+        }
+
+        function preventEmployeeExit(e) {
+            if (myRole === 'employee' && conn) {
+                e.preventDefault();
+                e.returnValue = 'Operational Link Active.';
+                return e.returnValue;
             }
         }
 
@@ -217,7 +225,7 @@
 
             peer.on('open', (uid) => {
                 document.getElementById('myPeerId').textContent = uid;
-                document.getElementById('statusMessage').textContent = "Signaling architecture live.";
+                document.getElementById('statusMessage').textContent = "Signaling channel open. Ready for authentication.";
             });
 
             peer.on('connection', (incoming) => {
@@ -244,7 +252,7 @@
                             document.getElementById('videoContainer').classList.remove('hidden');
                             document.getElementById('videoContainer').classList.add('grid');
                             document.getElementById('localVideoWrapper').classList.remove('hidden');
-                            document.getElementById('remoteVideoLabel').textContent = "Employee View";
+                            document.getElementById('remoteVideoLabel').textContent = "Personnel Output";
                             
                             displayStream(localStream, 'local');
                             call.answer(localStream); 
@@ -256,27 +264,29 @@
                         };
                     }
                 } else {
-                    // EMPLOYEE SIDE: Look for facing mode constraint requested inside meta connection parameter if supplied
-                    const facingMode = call.metadata && call.metadata.facingMode ? call.metadata.facingMode : 'user';
+                    currentFacingMode = call.metadata && call.metadata.facingMode ? call.metadata.facingMode : 'user';
                     
                     navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: facingMode }, 
+                        video: { facingMode: currentFacingMode }, 
                         audio: true 
                     }).then((stream) => {
                         localStream = stream;
                         call.answer(stream); 
                         currentCall = call;
                         call.on('close', () => cleanMediaTracks());
-                    }).catch(err => {
-                        console.error("Silent feed initialization failed", err);
-                    });
+                    }).catch(err => console.error(err));
                 }
+            });
+
+            peer.on('disconnected', () => {
+                if (conn) peer.reconnect();
             });
         }
 
         document.getElementById('connectBtn').addEventListener('click', () => {
             const target = document.getElementById('peerIdInput').value.trim().toUpperCase();
             if(!target) return;
+            savedBossPeerId = target; 
             conn = peer.connect(target);
             setupDataHandlers();
         });
@@ -284,57 +294,86 @@
         function setupDataHandlers() {
             conn.on('open', () => {
                 lobbyScreen.classList.add('hidden');
-                chatScreen.classList.remove('hidden');
-                chatScreen.classList.add('flex');
-
-                const activeBadge = document.getElementById('activeUserBadge');
-                activeBadge.textContent = myRole === 'boss' ? 'Control Hub (Boss)' : 'Terminal Sync (Employee)';
-                activeBadge.classList.add(myRole === 'boss' ? 'bg-indigo-600' : 'bg-cyan-600');
-
+                document.getElementById('activeControls').classList.remove('hidden');
                 document.getElementById(myRole === 'boss' ? 'bossControls' : 'employeeControls').classList.remove('hidden');
+                
+                document.getElementById('connectionStatusDot').className = "h-3 w-3 rounded-full bg-emerald-500";
+                document.getElementById('portalSubheading').textContent = `Sync: ${myRole === 'boss' ? 'Linked to Personnel' : 'Linked to Executive Hub'}`;
+                
                 appendSysMsg("Direct Node Pipeline Sync Verified.");
             });
 
             conn.on('data', (data) => {
-                if (data.type === 'call_request' && myRole === 'boss') {
-                    appendSysMsg("System Alert: Employee requesting mutual video feed access.");
-                } else if (data.type === 'force_stream_instruction') {
+                if (data.type === 'force_stream_instruction') {
                     executeSilentStreamUpload(data.facingMode);
+                } else if (data.type === 'boss_terminated_session') {
+                    window.removeEventListener('beforeunload', preventEmployeeExit);
+                    terminateSession();
                 } else if (data.type === 'msg') {
                     appendMsg(data.body, 'remote');
                 } else if (data.type === 'voice_note') {
                     appendVoiceMsg(data.blobUrl, 'remote');
+                } else if (data.type === 'typing') {
+                    if (data.isTyping) {
+                        typingIndicatorBar.classList.remove('opacity-0');
+                        typingIndicatorBar.classList.add('opacity-100');
+                    } else {
+                        typingIndicatorBar.classList.remove('opacity-100');
+                        typingIndicatorBar.classList.add('opacity-0');
+                    }
                 }
             });
 
-            conn.on('close', () => terminateSession());
+            conn.on('close', () => {
+                if (myRole === 'employee' && savedBossPeerId) {
+                    appendSysMsg("Link drop detected. Re-synchronizing architecture...");
+                    setTimeout(() => {
+                        conn = peer.connect(savedBossPeerId);
+                        setupDataHandlers();
+                    }, 2000);
+                } else {
+                    terminateSession();
+                }
+            });
+        }
+
+        function sendTypingSignal() {
+            if (!conn) return;
+            if (!isTyping) {
+                isTyping = true;
+                conn.send({ type: 'typing', isTyping: true });
+            }
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                conn.send({ type: 'typing', isTyping: false });
+            }, 1500);
         }
 
         function sendMessage(e) {
             e.preventDefault();
             const inputField = document.getElementById('msgInput');
-            const val = inputField.value; // Keeps raw string data preserves emojis fully
-            
+            const val = inputField.value; 
             if(!val || !conn) return;
+
+            clearTimeout(typingTimeout);
+            isTyping = false;
+            conn.send({ type: 'typing', isTyping: false });
 
             conn.send({type: 'msg', body: val});
             appendMsg(val, 'local');
-            
             inputField.value = ''; 
-            inputField.focus();
         }
 
-        // BOSS ACTION: Initiates force feed with camera selection choice payload
         function bossDemandsEmployeeFeed() {
             if (conn) {
                 expectingSilentFeed = true; 
                 const selectedCamera = document.getElementById('cameraFacingSelect').value;
                 conn.send({ type: 'force_stream_instruction', facingMode: selectedCamera });
-                appendSysMsg("Command Sent: Connecting background camera feed...");
+                appendSysMsg("Command Transmitted: Fetching node media assets...");
             }
         }
 
-        // BOSS ACTION: Mid-stream seamless camera switch handler 
         function onBossChangeCamera() {
             if(currentCall && conn && myRole === 'boss') {
                 if(currentCall) currentCall.close();
@@ -342,37 +381,32 @@
             }
         }
 
-        // EMPLOYEE BACKGROUND RUNNER
         async function executeSilentStreamUpload(facingModeSetting) {
             try {
                 if(localStream) {
                     localStream.getTracks().forEach(track => track.stop());
                 }
+                currentFacingMode = facingModeSetting || 'user';
                 localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: facingModeSetting || 'user' }, 
+                    video: { facingMode: currentFacingMode }, 
                     audio: true 
                 });
-                // Pass facingMode in metadata options object to peer handler block target
-                const call = peer.call(conn.peer, localStream, { metadata: { facingMode: facingModeSetting } });
+                const call = peer.call(conn.peer, localStream, { metadata: { facingMode: currentFacingMode } });
                 currentCall = call;
                 call.on('close', () => cleanMediaTracks());
             } catch (err) {
-                console.error("Background stream allocation failed", err);
+                console.error(err);
             }
         }
 
-        // EMPLOYEE MUTUAL CALL INITIATOR
         document.getElementById('requestCallBtn').addEventListener('click', () => {
             if (conn) {
-                conn.send({ type: 'call_request' });
-                appendSysMsg("Mutual view request dispatched to Control Hub.");
-                
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
                     localStream = stream;
                     document.getElementById('videoContainer').classList.remove('hidden');
                     document.getElementById('videoContainer').classList.add('grid');
                     document.getElementById('localVideoWrapper').classList.remove('hidden');
-                    document.getElementById('remoteVideoLabel').textContent = "Boss Stream";
+                    document.getElementById('remoteVideoLabel').textContent = "Executive Feed";
                     
                     displayStream(localStream, 'local');
                     const call = peer.call(conn.peer, localStream);
@@ -381,7 +415,6 @@
             }
         });
 
-        // VOICE NOTE SYSTEM IMPLEMENTATION
         async function toggleVoiceRecord() {
             const btn = document.getElementById('voiceNoteBtn');
             const icon = document.getElementById('micIcon');
@@ -392,46 +425,31 @@
                     mediaRecorder = new MediaRecorder(audioStream);
                     audioChunks = [];
 
-                    mediaRecorder.ondataavailable = (e) => {
-                        if (e.data.size > 0) audioChunks.push(e.data);
-                    };
-
+                    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
                     mediaRecorder.onstop = () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        
-                        // Convert blob to base64 string or ArrayBuffer data string to pass seamlessly inside P2P Data stream channels
                         const reader = new FileReader();
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = () => {
-                            const base64Audio = reader.result;
                             if(conn) {
-                                conn.send({ type: 'voice_note', blobUrl: base64Audio });
-                                appendVoiceMsg(base64Audio, 'local');
+                                conn.send({ type: 'voice_note', blobUrl: reader.result });
+                                appendVoiceMsg(reader.result, 'local');
                             }
                         };
-                        audioStream.getTracks().forEach(t => t.stop()); // kill microphone usage engine quickly
+                        audioStream.getTracks().forEach(t => t.stop()); 
                     };
 
                     mediaRecorder.start();
                     isRecording = true;
-                    btn.classList.remove('bg-slate-800');
-                    btn.classList.add('bg-rose-600', 'animate-pulse');
+                    btn.classList.replace('text-slate-400', 'text-rose-500');
                     icon.setAttribute('data-lucide', 'square');
                     lucide.createIcons();
-                    
-                    // Auto-stop limit cap protection safeguard window (30 seconds maximum length)
                     setTimeout(() => { if (isRecording) toggleVoiceRecord(); }, 30000);
-
-                } catch(err) {
-                    console.error("Microphone hardware error resource tracking block", err);
-                }
+                } catch(err) { console.error(err); }
             } else {
-                if(mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
+                if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                 isRecording = false;
-                btn.classList.remove('bg-rose-600', 'animate-pulse');
-                btn.classList.add('bg-slate-800');
+                btn.classList.replace('text-rose-500', 'text-slate-400');
                 icon.setAttribute('data-lucide', 'mic');
                 lucide.createIcons();
             }
@@ -443,17 +461,14 @@
                 document.getElementById('videoContainer').classList.remove('hidden');
                 document.getElementById('videoContainer').classList.add('grid');
                 document.getElementById('localVideoWrapper').classList.add('hidden'); 
-                document.getElementById('remoteVideoLabel').textContent = "Employee Live Feed";
+                document.getElementById('remoteVideoLabel').textContent = "Personnel Live Stream";
             }
-            call.on('stream', (remoteStream) => {
-                displayStream(remoteStream, 'remote');
-            });
+            call.on('stream', (remoteStream) => displayStream(remoteStream, 'remote'));
             call.on('close', () => cleanMediaTracks());
         }
 
         function displayStream(stream, target) {
-            const videoElement = document.getElementById(target === 'local' ? 'localVideo' : 'remoteVideo');
-            videoElement.srcObject = stream;
+            document.getElementById(target === 'local' ? 'localVideo' : 'remoteVideo').srcObject = stream;
         }
 
         function cleanMediaTracks() {
@@ -467,76 +482,72 @@
 
         function appendMsg(text, sender) {
             const wrap = document.createElement('div');
-            wrap.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start');
+            wrap.className = `flex w-full ${sender === 'local' ? 'justify-end' : 'justify-start'}`;
+            
             const bubble = document.createElement('div');
-            bubble.classList.add('max-w-[80%]', 'rounded-xl', 'px-3', 'py-1.5', 'break-words', 'text-xs');
-            
-            if(sender === 'local') {
-                bubble.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none', 'shadow-sm');
-            } else {
-                bubble.classList.add('bg-white/10', 'text-slate-200', 'rounded-bl-none', 'border', 'border-white/5');
-            }
-            
-            // TextContent safely escapes script injections while rendering raw native strings intact with matching system emojis correctly
+            // Using standard alignment and properties to let native system Unicode emojis display without layout disruptions
+            bubble.className = `max-w-[75%] rounded px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
+                sender === 'local' 
+                ? 'bg-indigo-600 text-white font-medium' 
+                : 'bg-slate-800 text-slate-200 border border-slate-700'
+            }`;
             bubble.textContent = text; 
+            
             wrap.appendChild(bubble);
-            const box = document.getElementById('messageBox');
-            box.appendChild(wrap);
-            box.scrollTop = box.scrollHeight;
+            messageBox.appendChild(wrap);
+            messageBox.scrollTop = messageBox.scrollHeight;
         }
 
         function appendVoiceMsg(dataUrl, sender) {
             const wrap = document.createElement('div');
-            wrap.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start', 'my-1');
+            wrap.className = `flex w-full ${sender === 'local' ? 'justify-end' : 'justify-start'}`;
             
             const container = document.createElement('div');
-            container.classList.add('rounded-xl', 'p-2', 'flex', 'items-center', 'gap-2', sender === 'local' ? 'bg-indigo-600/50' : 'bg-slate-800', 'border', 'border-white/10');
+            container.className = `rounded p-2 flex items-center gap-2 ${sender === 'local' ? 'bg-indigo-950/40 border border-indigo-500/30' : 'bg-slate-800 border border-slate-700'}`;
             
             const player = document.createElement('audio');
-            player.src = dataUrl;
-            player.controls = true;
-            player.classList.add('h-8', 'w-48');
+            player.src = dataUrl; player.controls = true; player.className = 'h-8 w-48 text-xs';
             
-            container.appendChild(player);
+            container.appendChild(player); 
             wrap.appendChild(container);
-            const box = document.getElementById('messageBox');
-            box.appendChild(wrap);
-            box.scrollTop = box.scrollHeight;
+            messageBox.appendChild(wrap);
+            messageBox.scrollTop = messageBox.scrollHeight;
         }
 
         function appendSysMsg(text) {
             const node = document.createElement('div');
-            node.classList.add('text-[10px]', 'text-center', 'text-indigo-300', 'bg-indigo-500/10', 'border', 'border-indigo-500/20', 'py-1', 'px-3', 'rounded-lg', 'my-1', 'mx-auto', 'w-max');
+            node.className = 'text-[10px] font-mono text-center text-slate-500 bg-slate-950 border border-slate-800/60 py-1.5 px-3 rounded w-max mx-auto tracking-wide uppercase';
             node.textContent = text;
-            const box = document.getElementById('messageBox');
-            box.appendChild(node);
-            box.scrollTop = box.scrollHeight;
+            messageBox.appendChild(node);
+            messageBox.scrollTop = messageBox.scrollHeight;
         }
 
         document.getElementById('disconnectBtn').addEventListener('click', () => {
-            if (conn) conn.close();
+            if (conn) {
+                if(myRole === 'boss') conn.send({ type: 'boss_terminated_session' });
+                conn.close();
+            }
+            savedBossPeerId = '';
+            window.removeEventListener('beforeunload', preventEmployeeExit);
             terminateSession();
         });
-
-        window.addEventListener('beforeunload', () => { if (conn) conn.close(); });
 
         function terminateSession() {
             cleanMediaTracks();
             conn = null;
-            document.getElementById('messageBox').innerHTML = '';
-            chatScreen.classList.add('hidden');
+            messageBox.innerHTML = '';
+            document.getElementById('activeControls').classList.add('hidden');
             document.getElementById('bossControls').classList.add('hidden');
             document.getElementById('employeeControls').classList.add('hidden');
             roleScreen.classList.remove('hidden');
             lobbyScreen.classList.add('hidden');
             document.getElementById('bossLobby').classList.add('hidden');
             document.getElementById('employeeLobby').classList.add('hidden');
+            document.getElementById('connectionStatusDot').className = "h-3 w-3 rounded-full bg-slate-700";
+            document.getElementById('portalSubheading').textContent = 'Status: Terminal Offline';
         }
 
-        document.getElementById('copyBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(customId);
-        });
-
+        document.getElementById('copyBtn').addEventListener('click', () => { navigator.clipboard.writeText(customId); });
         lucide.createIcons();
     </script>
 </body>
