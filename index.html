@@ -3,279 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Pulse Chat</title>
-    <!-- Tailwind CSS for styling -->
+    <title>P2P Workspace Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PeerJS for WebRTC signaling and connections -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @keyframes pulse-slow {
-            0%, 100% { transform: scale(1); opacity: 0.2; }
-            50% { transform: scale(1.05); opacity: 0.4; }
+            0%, 100% { transform: scale(1); opacity: 0.15; }
+            50% { transform: scale(1.1); opacity: 0.3; }
         }
-        .bg-animate {
-            animation: pulse-slow 8s infinite ease-in-out;
+        .bg-animate { animation: pulse-slow 12s infinite ease-in-out; }
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-input:focus {
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden relative">
+<body class="bg-[#030712] text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden relative">
 
-    <!-- Animated Background Elements -->
-    <div class="absolute inset-0 bg-gradient-to-tr from-indigo-950/40 via-slate-950 to-emerald-950/30 z-0"></div>
-    <div class="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-3xl bg-animate top-[-10%] left-[-10%] z-0"></div>
-    <div class="absolute w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-3xl bg-animate bottom-[-10%] right-[-10%] z-0"></div>
+    <!-- Deep Space Fluid Background -->
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#0b0f19] to-indigo-950/40 z-0"></div>
+    <div class="absolute w-[600px] h-[600px] rounded-full bg-blue-500/10 blur-[120px] bg-animate -top-20 -left-20 z-0"></div>
+    <div class="absolute w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[120px] bg-animate -bottom-20 -right-20 z-0"></div>
 
-    <!-- Main Container -->
-    <main class="w-full max-w-md p-6 bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl z-10 transition-all duration-500 flex flex-col h-[600px]">
+    <!-- Main App Container -->
+    <main class="w-full max-w-lg p-6 glass-panel rounded-2xl shadow-2xl z-10 transition-all duration-500 flex flex-col h-[650px]">
         
-        <!-- Connection Lobby Screen -->
-        <div id="lobbyScreen" class="flex flex-col flex-grow justify-between py-4">
+        <!-- STEP 1: ROLE SELECTION -->
+        <div id="roleScreen" class="flex flex-col flex-grow justify-center items-center text-center space-y-6">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">Workspace Portal</h1>
+                <p class="text-sm text-slate-400 mt-2">Select your operational identity to begin</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                <button onclick="selectRole('boss')" class="flex flex-col items-center justify-center p-5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 active:scale-[0.98] transition">
+                    <i data-lucide="crown" class="w-10 h-10 text-indigo-400 mb-2"></i>
+                    <span class="font-bold tracking-wide">BOSS</span>
+                </button>
+                <button onclick="selectRole('employee')" class="flex flex-col items-center justify-center p-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 active:scale-[0.98] transition">
+                    <i data-lucide="briefcase" class="w-10 h-10 text-cyan-400 mb-2"></i>
+                    <span class="font-bold tracking-wide">EMPLOYEE</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: LOBBY (Initially Hidden) -->
+        <div id="lobbyScreen" class="hidden flex-col flex-grow justify-between py-2">
             <div class="text-center">
-                <div class="inline-flex p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 mb-3 animate-bounce">
-                    <i data-lucide="shield-alert" class="w-8 h-8"></i>
-                </div>
-                <h1 class="text-2xl font-bold tracking-tight text-white">Secure P2P Chat</h1>
-                <p class="text-sm text-slate-400 mt-1">Direct device-to-device messaging</p>
+                <span id="roleBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-2"></span>
+                <h2 class="text-xl font-bold text-white">Establish Secure Feed</h2>
             </div>
 
-            <!-- Your Code Section -->
-            <div class="bg-slate-950/50 border border-slate-800 p-4 rounded-xl text-center my-6">
-                <span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Your Connection Code</span>
-                <div class="flex items-center justify-center gap-2">
-                    <span id="myPeerId" class="text-xl font-mono font-bold text-indigo-400 tracking-wider">Generating...</span>
-                    <button id="copyBtn" class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition hidden" title="Copy Code">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
+            <!-- Boss Panel: Generates and Shares Code -->
+            <div id="bossLobby" class="hidden space-y-4 my-auto">
+                <div class="glass-input p-4 rounded-xl text-center">
+                    <span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Your Corporate Access Key</span>
+                    <div class="flex items-center justify-center gap-2">
+                        <span id="myPeerId" class="text-2xl font-mono font-bold text-indigo-400 tracking-widest">Generating...</span>
+                        <button id="copyBtn" class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-white/10 transition">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-xs text-center text-slate-400">Provide this passcode to your employee to authorize connection.</p>
+            </div>
+
+            <!-- Employee Panel: Enters Boss's Code -->
+            <div id="employeeLobby" class="hidden space-y-4 my-auto">
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Enter Boss's Credentials</label>
+                    <input type="text" id="peerIdInput" placeholder="Paste Boss passcode..." 
+                           class="w-full glass-input rounded-xl py-3 px-4 text-white text-center font-mono tracking-widest focus:outline-none">
+                </div>
+                <button id="connectBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 active:scale-[0.98] text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Connect to Server Hub
+                </button>
+            </div>
+
+            <div id="statusMessage" class="text-xs text-center text-slate-500 h-4">Initializing cryptography engine...</div>
+        </div>
+
+        <!-- STEP 3: LIVE ACTIVE DASHBOARD (Initially Hidden) -->
+        <div id="chatScreen" class="hidden flex-col h-full space-y-3">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span id="activeUserBadge" class="text-xs font-bold px-2 py-0.5 rounded uppercase"></span>
+                </div>
+                
+                <!-- Media Action Tray -->
+                <div class="flex gap-2">
+                    <!-- Boss Controls (Always active to demand view) -->
+                    <div id="bossControls" class="hidden gap-2">
+                        <button onclick="initiateMediaCall('voice')" class="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition" title="Voice Feed">
+                            <i data-lucide="phone" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="initiateMediaCall('video')" class="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl transition" title="Force Video Stream">
+                            <i data-lucide="video" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <!-- Employee Controls (Sends Request Event) -->
+                    <div id="employeeControls" class="hidden">
+                        <button id="requestCallBtn" class="px-3 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl transition flex items-center gap-1.5">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Request Feed
+                        </button>
+                    </div>
+                    <button id="disconnectBtn" class="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition">
+                        <i data-lucide="power" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Connect to Peer Form -->
-            <div class="space-y-3">
-                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Connect to a Peer</label>
-                <div class="relative">
-                    <input type="text" id="peerIdInput" placeholder="Paste friend's code here..." 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 pl-11 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-mono tracking-wider">
-                    <div class="absolute left-4 top-3.5 text-slate-600">
-                        <i data-lucide="link-2" class="w-4 h-4"></i>
-                    </div>
+            <!-- Streaming Viewports Layer -->
+            <div id="videoContainer" class="hidden grid grid-cols-2 gap-2 glass-input p-2 rounded-xl border border-white/5 relative">
+                <div>
+                    <span class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-slate-400 z-10">Local</span>
+                    <video id="localVideo" autoplay muted playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
                 </div>
-                <button id="connectBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
-                    <i data-lucide="zap" class="w-4 h-4"></i> Establish Connection
-                </button>
-            </div>
-
-            <div id="statusMessage" class="text-xs text-center text-slate-500 mt-4 h-4">Connecting to signaling network...</div>
-        </div>
-
-        <!-- Active Chat Screen (Initially Hidden) -->
-        <div id="chatScreen" class="hidden flex-col h-full">
-            <!-- Chat Header -->
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div class="flex items-center gap-2">
-                    <span class="relative flex h-3 w-3">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    <div>
-                        <h2 class="text-sm font-semibold text-white">Connected</h2>
-                        <span id="remotePeerDisplay" class="text-[10px] font-mono text-slate-500"></span>
-                    </div>
+                <div>
+                    <span class="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-indigo-400 z-10">Remote</span>
+                    <video id="remoteVideo" autoplay playsinline class="w-full h-28 object-cover rounded-lg bg-black/40"></video>
                 </div>
-                <button id="disconnectBtn" class="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl border border-rose-500/10 transition" title="Disconnect">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                </button>
             </div>
 
             <!-- Messages Stream -->
-            <div id="messageBox" class="flex-grow overflow-y-auto my-4 space-y-3 pr-1 scrollbar-thin text-sm">
-                <!-- Messages populate here dynamically -->
-            </div>
+            <div id="messageBox" class="flex-grow overflow-y-auto space-y-2 pr-1 text-sm my-1"></div>
 
-            <!-- Message Input Tray -->
+            <!-- Message Input -->
             <form id="msgForm" class="flex gap-2">
-                <input type="text" id="msgInput" placeholder="Type a secure message..." autocomplete="off"
-                       class="flex-grow bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                <input type="text" id="msgInput" placeholder="Transmit data string..." autocomplete="off"
+                       class="flex-grow glass-input rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none text-sm">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center active:scale-[0.98]">
-                    <i data-lucide="send" class="w-5 h-5"></i>
+                    <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </form>
         </div>
     </main>
 
+    <!-- Call Overlay Popup (For Approvals) -->
+    <div id="incomingCallModal" class="hidden absolute inset-0 z-50 bg-black/70 backdrop-blur-md flex flex-col justify-center items-center">
+        <div class="glass-panel p-6 rounded-2xl w-80 text-center space-y-4 border border-white/20">
+            <div class="animate-ping p-2 bg-cyan-500/20 text-cyan-400 rounded-full w-fit mx-auto">
+                <i data-lucide="phone-call" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-bold text-lg text-white">Incoming Stream Request</h3>
+            <p class="text-xs text-slate-400">Employee is requesting data channel authorization.</p>
+            <div class="flex gap-2">
+                <button id="rejectCallBtn" class="flex-1 bg-rose-600/20 hover:bg-rose-600 text-rose-200 py-2 rounded-xl transition text-sm">Deny</button>
+                <button id="acceptCallBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl transition text-sm font-bold">Approve</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Generate a random clean VARCHAR string for the connection OTP code
-        function generateVarcharCode(length = 6) {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Clean character set (No confusing O/0 or I/1)
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        }
-
-        // DOM Elements
-        const lobbyScreen = document.getElementById('lobbyScreen');
-        const chatScreen = document.getElementById('chatScreen');
-        const myPeerIdEl = document.getElementById('myPeerId');
-        const copyBtn = document.getElementById('copyBtn');
-        const peerIdInput = document.getElementById('peerIdInput');
-        const connectBtn = document.getElementById('connectBtn');
-        const statusMessage = document.getElementById('statusMessage');
-        const remotePeerDisplay = document.getElementById('remotePeerDisplay');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const messageBox = document.getElementById('messageBox');
-        const msgForm = document.getElementById('msgForm');
-        const msgInput = document.getElementById('msgInput');
-
-        const customId = generateVarcharCode(6);
+        let myRole = ''; 
         let peer = null;
         let conn = null;
+        let currentCall = null;
+        let localStream = null;
 
-        // Initialize PeerJS
-        // Uses PeerJS public cloud servers for signaling connection handshakes
-        peer = new Peer(customId);
+        // Clean random VARCHAR generation
+        function generateCode(len = 6) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let res = '';
+            for(let i=0; i<len; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
+            return res;
+        }
 
-        peer.on('open', (id) => {
-            myPeerIdEl.textContent = id;
-            copyBtn.classList.remove('hidden');
-            statusMessage.textContent = "Ready to connect. Share your code or enter a friend's.";
-        });
+        const customId = generateCode(6);
 
-        peer.on('error', (err) => {
-            console.error(err);
-            statusMessage.textContent = `Connection error occurred.`;
-        });
+        // Core Screen elements
+        const roleScreen = document.getElementById('roleScreen');
+        const lobbyScreen = document.getElementById('lobbyScreen');
+        const chatScreen = document.getElementById('chatScreen');
+        
+        // Setup configuration depending on path selection
+        function selectRole(role) {
+            myRole = role;
+            roleScreen.classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
+            lobbyScreen.classList.add('flex');
 
-        // Handle incoming connection requests (Person B gets called)
-        peer.on('connection', (incomingConn) => {
-            if (conn) { 
-                incomingConn.close(); // Reject if already in a chat
-                return; 
+            const badge = document.getElementById('roleBadge');
+            if (role === 'boss') {
+                badge.textContent = 'Identity: Executive (Boss)';
+                badge.classList.add('bg-indigo-500/20', 'text-indigo-300', 'border', 'border-indigo-500/30');
+                document.getElementById('bossLobby').classList.remove('hidden');
+                // Boss spawns server using standard ID
+                initPeer(customId);
+            } else {
+                badge.textContent = 'Identity: Personnel (Employee)';
+                badge.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border', 'border-cyan-500/30');
+                document.getElementById('employeeLobby').classList.remove('hidden');
+                // Employee spawns standard random listener
+                initPeer();
             }
-            conn = incomingConn;
-            setupConnectionHandlers();
+        }
+
+        function initPeer(id = null) {
+            peer = id ? new Peer(id) : new Peer();
+
+            peer.on('open', (uid) => {
+                document.getElementById('myPeerId').textContent = uid;
+                document.getElementById('statusMessage').textContent = "Signaling architecture live.";
+            });
+
+            // Handle incoming data tunnels
+            peer.on('connection', (incoming) => {
+                if(myRole === 'employee') {
+                    // Safety check: Employees don't take outside unsolicited requests
+                    incoming.close();
+                    return;
+                }
+                conn = incoming;
+                setupDataHandlers();
+            });
+
+            // Handle incoming WebRTC video/audio streams
+            peer.on('call', (call) => {
+                if (myRole === 'boss') {
+                    // If employee pushes stream, pop confirmation
+                    document.getElementById('incomingCallModal').classList.remove('hidden');
+                    document.getElementById('acceptCallBtn').onclick = async () => {
+                        document.getElementById('incomingCallModal').classList.add('hidden');
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        displayStream(localStream, 'local');
+                        call.answer(localStream);
+                        handleStream(call);
+                    };
+                    document.getElementById('rejectCallBtn').onclick = () => {
+                        document.getElementById('incomingCallModal').classList.add('hidden');
+                        call.close();
+                    };
+                } else {
+                    // Employee automatically accepts the boss checking in!
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                        localStream = stream;
+                        displayStream(localStream, 'local');
+                        call.answer(stream);
+                        handleStream(call);
+                    });
+                }
+            });
+        }
+
+        // Employee action trigger
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const target = document.getElementById('peerIdInput').value.trim().toUpperCase();
+            if(!target) return;
+            conn = peer.connect(target);
+            setupDataHandlers();
         });
 
-        // Click handler to initiate connection (Person A calls Person B)
-        connectBtn.addEventListener('click', () => {
-            const remoteId = peerIdInput.value.trim().toUpperCase();
-            if (!remoteId) {
-                statusMessage.textContent = "Please enter a valid code first.";
-                return;
-            }
-            if (remoteId === customId) {
-                statusMessage.textContent = "You can't connect to your own code.";
-                return;
-            }
-
-            statusMessage.textContent = "Knocking on peer's door...";
-            conn = peer.connect(remoteId);
-            setupConnectionHandlers();
-        });
-
-        // Setup signaling data streams once connected
-        function setupConnectionHandlers() {
+        function setupDataHandlers() {
             conn.on('open', () => {
-                // UI Screen swap animation
                 lobbyScreen.classList.add('hidden');
                 chatScreen.classList.remove('hidden');
                 chatScreen.classList.add('flex');
-                remotePeerDisplay.textContent = `Peer ID: ${conn.peer}`;
-                
-                appendSystemMessage("Secure End-to-End Link Established.");
+
+                const activeBadge = document.getElementById('activeUserBadge');
+                activeBadge.textContent = myRole === 'boss' ? 'Control Hub (Boss)' : 'Terminal Sync (Employee)';
+                activeBadge.classList.add(myRole === 'boss' ? 'bg-indigo-600' : 'bg-cyan-600');
+
+                document.getElementById(myRole === 'boss' ? 'bossControls' : 'employeeControls').classList.remove('hidden');
+                appendSysMsg("Direct Node Pipeline Sync Verified.");
             });
 
             conn.on('data', (data) => {
-                appendMessage(data, 'remote');
+                if (data.type === 'call_request' && myRole === 'boss') {
+                    appendSysMsg("System Alert: Employee requesting immediate stream view.");
+                } else if (data.type === 'msg') {
+                    appendMsg(data.body, 'remote');
+                }
             });
 
-            conn.on('close', () => {
-                handleDisconnect();
-            });
-
-            conn.on('error', () => {
-                handleDisconnect();
-            });
+            conn.on('close', () => terminateSession());
         }
 
-        // Sending a message
-        msgForm.addEventListener('submit', (e) => {
+        // Messaging engine logic
+        document.getElementById('msgForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const text = msgInput.value.trim();
-            if (!text || !conn) return;
+            const val = document.getElementById('msgInput').value.trim();
+            if(!val || !conn) return;
 
-            conn.send(text);
-            appendMessage(text, 'local');
-            msgInput.value = '';
+            conn.send({type: 'msg', body: val});
+            appendMsg(val, 'local');
+            document.getElementById('msgInput').value = '';
         });
 
-        // Append UI Chat message nodes
-        function appendMessage(text, sender) {
-            const wrapper = document.createElement('div');
-            wrapper.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start');
+        // Trigger media engine
+        async function initiateMediaCall(mode) {
+            try {
+                const constraints = { video: mode === 'video', audio: true };
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                displayStream(localStream, 'local');
 
-            const msgBubble = document.createElement('div');
-            msgBubble.classList.add('max-w-[80%]', 'rounded-2xl', 'px-4', 'py-2.5', 'shadow-sm', 'break-words');
-            
-            if (sender === 'local') {
-                msgBubble.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none');
-            } else {
-                msgBubble.classList.add('bg-slate-800', 'text-slate-200', 'rounded-bl-none', 'border', 'border-slate-700/50');
+                const call = peer.call(conn.peer, localStream);
+                handleStream(call);
+            } catch (err) {
+                console.error("Device media block or missing equipment error", err);
             }
-
-            msgBubble.textContent = text;
-            wrapper.appendChild(msgBubble);
-            messageBox.appendChild(wrapper);
-            messageBox.scrollTop = messageBox.scrollHeight;
         }
 
-        function appendSystemMessage(text) {
-            const sysNode = document.createElement('div');
-            sysNode.classList.add('text-[11px]', 'text-center', 'text-indigo-400/80', 'bg-indigo-500/5', 'border', 'border-indigo-500/10', 'py-1', 'px-3', 'rounded-lg', 'my-2', 'mx-auto', 'w-max');
-            sysNode.textContent = text;
-            messageBox.appendChild(sysNode);
-            messageBox.scrollTop = messageBox.scrollHeight;
+        // Employee event messaging system setup
+        document.getElementById('requestCallBtn').addEventListener('click', () => {
+            if (conn) {
+                conn.send({ type: 'call_request' });
+                appendSysMsg("Transmission Request Dispatched to Hub.");
+            }
+        });
+
+        function handleStream(call) {
+            currentCall = call;
+            document.getElementById('videoContainer').classList.remove('hidden');
+            document.getElementById('videoContainer').classList.add('grid');
+            
+            call.on('stream', (remoteStream) => {
+                displayStream(remoteStream, 'remote');
+            });
+            call.on('close', () => cleanMediaTracks());
         }
 
-        // Close connection cleanly if a user targets the exit button
-        disconnectBtn.addEventListener('click', () => {
-            if (conn) conn.close();
-            handleDisconnect();
-        });
-
-        // Handle page closures or navigating away to terminate links for the remote peer instantly
-        window.addEventListener('beforeunload', () => {
-            if (conn) conn.close();
-        });
-
-        function handleDisconnect() {
-            conn = null;
-            messageBox.innerHTML = '';
-            chatScreen.classList.remove('flex');
-            chatScreen.classList.add('hidden');
-            lobbyScreen.classList.remove('hidden');
-            statusMessage.textContent = "Disconnected from previous session.";
-            peerIdInput.value = '';
+        function displayStream(stream, target) {
+            const videoElement = document.getElementById(target === 'local' ? 'localVideo' : 'remoteVideo');
+            videoElement.srcObject = stream;
         }
 
-        // Copy Code Clipboard utility
-        copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(customId);
-            const icon = copyBtn.querySelector('i');
-            icon.setAttribute('data-lucide', 'check');
-            copyBtn.classList.add('text-emerald-400');
-            lucide.createIcons();
-            setTimeout(() => {
-                icon.setAttribute('data-lucide', 'copy');
-                copyBtn.classList.remove('text-emerald-400');
-                lucide.createIcons();
-            }, 2000);
-        });
+        function cleanMediaTracks() {
+            document.getElementById('videoContainer').classList.add('hidden');
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            currentCall = null;
+        }
 
-        // Initialize Icons
-        lucide.createIcons();
-    </script>
-</body>
-</html>
+        function appendMsg(text, sender) {
+            const wrap = document.createElement('div');
+            wrap.classList.add('flex', 'w-full', sender === 'local' ? 'justify-end' : 'justify-start');
+            const bubble = document.createElement('div');
+            bubble.classList.add('max-w-[80%]', 'rounded-xl', 'px-3', 'py-1.5', 'break-words', 'text-xs');
+            
+            if(sender === 'local') {
+                bubble.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none shadow-sm');
+            } else {
+                bubble.classList.add('bg-white/10', 'text-slate-200', 'rounded-bl-none', 'border', 'border-white/5');
+            }
+            bubble.textContent = text;
+            wrap.appendChild(bubble);
+            const box = document.getElementById('messageBox');
+            box.appendChild(wrap);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function appendSysMsg(text) {
+            const node = document.createElement('div');
+            node.classList.add('text-[10px]', 'text-center', 'text-indigo-300', 'bg-indigo-500/10', 'border', 'border-indigo-500/20', 'py-1', 'px-3', 'rounded-lg', 'my-1', 'mx-auto', 'w-max');
+            node.textContent = text;
+            const box = document.getElementById('messageBox'
