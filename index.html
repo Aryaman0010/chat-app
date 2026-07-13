@@ -1,5 +1,229 @@
-<script>
-        // 1. INITIALIZE GLOBAL UTILITIES & GENERATE KEY IMMEDIATELY
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync Matrix Peer Node</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- PeerJS CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Header / Global Status Indicator -->
+    <header class="border-b border-slate-900 bg-slate-900/40 backdrop-blur px-6 py-4 flex items-center justify-between shadow-md">
+        <div>
+            <h1 class="text-lg font-semibold text-slate-200 tracking-tight">Operational Link Interface</h1>
+            <p id="portalSubheading" class="text-xs text-slate-500 font-medium">Status: Terminal Offline</p>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/50 px-3 py-1.5 rounded-full border border-slate-800">
+            <span id="connectionStatusDot" class="h-3 w-3 rounded-full bg-slate-700 animate-pulse"></span>
+            <span class="text-xs font-mono text-slate-400 select-none">NODE_STATUS</span>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Application Screen State Window -->
+    <main class="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-6xl mx-auto">
+        
+        <!-- Role Selection State Screen -->
+        <div id="roleScreen" class="w-full max-w-md bg-slate-900/60 border border-slate-800 p-8 rounded-xl shadow-2xl backdrop-blur flex flex-col gap-6">
+            <div class="text-center">
+                <h2 class="text-xl font-bold text-slate-200">Select Access Signature Role</h2>
+                <p class="text-xs text-slate-500 mt-1">Specify authorization tier to initiate direct pipeline sync</p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button onclick="selectRole('boss')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-lg shadow-indigo-600/20 transition-all cursor-pointer">
+                    Authorize Master Core (Boss Hub Mode)
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="selectRole('child')" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium rounded-lg transition-all cursor-pointer">
+                        Child Learning Node
+                    </button>
+                    <button onclick="selectRole('employee')" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium rounded-lg transition-all cursor-pointer">
+                        Personnel Unit Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lobby Waiting / Discovery State Screen -->
+        <div id="lobbyScreen" class="hidden w-full max-w-xl bg-slate-900/60 border border-slate-800 p-6 rounded-xl shadow-2xl backdrop-blur flex-col gap-6">
+            <!-- Boss Identity Setup Subview -->
+            <div id="bossLobby" class="hidden flex-col gap-4 text-center">
+                <div>
+                    <h3 class="text-md font-semibold text-slate-400">Broadcasting Master Signature Code</h3>
+                    <p class="text-xs text-slate-500">Provide this structural key to the downstream node connections</p>
+                </div>
+                <div class="flex items-center justify-center gap-3 bg-slate-950 p-4 rounded-lg border border-slate-800">
+                    <span id="myPeerId" class="text-2xl font-mono font-bold text-indigo-400 tracking-wider">------</span>
+                    <button id="copyBtn" class="p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 hover:text-white border border-slate-700 transition cursor-pointer" title="Copy Key">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Subordinate Link Insertion Subview -->
+            <div id="subLobby" class="hidden flex-col gap-4">
+                <div class="text-center">
+                    <h3 class="text-md font-semibold text-slate-400">Target Core Sync Configuration</h3>
+                    <p class="text-xs text-slate-500">Enter the Master validation signature key to open pipelines</p>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="peerIdInput" placeholder="ENTER 6-DIGIT MASTER KEY" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-center font-mono text-sm tracking-widest text-indigo-400 uppercase focus:outline-none focus:border-indigo-500" />
+                    <button id="connectBtn" class="px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg shadow-lg shadow-emerald-600/20 transition cursor-pointer">
+                        Connect Pipeline
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Internal Peer Status Readout -->
+            <div class="border-t border-slate-800/60 pt-4 flex items-center justify-between text-xs font-mono text-slate-500">
+                <span>Signal Channel Message:</span>
+                <span id="statusMessage" class="text-indigo-400 animate-pulse">Initializing cloud handshake...</span>
+            </div>
+        </div>
+
+        <!-- Active Stream & Control State Workspace Matrix Area -->
+        <div id="activeControls" class="hidden w-full flex-col lg:flex-row gap-6 mt-2">
+            
+            <!-- Left Panel: AV & Canvas Shared Visual Grid -->
+            <div class="flex-1 flex flex-col gap-4 bg-slate-900/40 border border-slate-800 p-4 rounded-xl shadow-xl">
+                
+                <!-- System AV Interface Streaming Viewports Window Container -->
+                <div id="videoContainer" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div id="localVideoWrapper" class="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-800 aspect-video flex items-center justify-center">
+                            <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <span class="absolute bottom-2 left-2 bg-indigo-600/80 backdrop-blur text-[10px] font-mono px-1.5 py-0.5 rounded text-white tracking-wide">LOCAL_FEED</span>
+                        </div>
+                        <div class="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-800 aspect-video flex items-center justify-center">
+                            <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                            <span class="absolute bottom-2 left-2 bg-emerald-600/80 backdrop-blur text-[10px] font-mono px-1.5 py-0.5 rounded text-white tracking-wide">REMOTE_PIPELINE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Whiteboard System Canvas Stack Wrapper Container -->
+                <div class="relative w-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden select-none aspect-video group">
+                    <canvas id="lessonCanvas" width="960" height="540" class="w-full h-full block cursor-crosshair relative z-10"></canvas>
+                    
+                    <!-- Virtual Mouse Tracker Overlay for Remote Clients -->
+                    <div id="virtualCursor" class="hidden absolute pointer-events-none z-20 w-4 h-4 text-indigo-400 -ml-1 -mt-1 transition-all duration-75">
+                        <i data-lucide="navigation" class="w-full h-full rotate-90 fill-current"></i>
+                    </div>
+
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-800/30 text-2xl font-mono tracking-widest font-bold uppercase select-none">
+                        Interactive Live Feed Workspace Matrix
+                    </div>
+                </div>
+
+                <!-- Visual Element Controls Interactivity Sub-Toolbar -->
+                <div class="flex justify-between items-center bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                    <span id="remotePointerStatus" class="text-xs font-mono text-slate-500">Pipeline State Stable.</span>
+                    <button id="canvasClearBtn" onclick="clearWorkspaceCanvas(true)" class="hidden px-3 py-1 bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 border border-rose-800/80 text-xs font-medium rounded transition cursor-pointer">
+                        Flush Matrix Canvas Canvas
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data Link Pipeline System Matrix and Chat Controller Panel -->
+            <div class="w-full lg:w-96 flex flex-col bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden shadow-xl aspect-[3/4] lg:aspect-auto">
+                
+                <!-- Active Role Specific Hardware Intervention Actions Panel -->
+                <div class="bg-slate-900 border-b border-slate-800 p-3">
+                    <!-- Boss Hub Authorization Interface -->
+                    <div id="bossControls" class="hidden flex-col gap-2">
+                        <label class="text-[10px] font-mono tracking-wider text-slate-500 uppercase font-bold">Remote Node Camera Capture Pipeline Control</label>
+                        <div class="flex gap-2">
+                            <select id="cameraFacingSelect" class="flex-1 bg-slate-950 text-slate-300 border border-slate-800 text-xs rounded px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                                <option value="user">User Facing (Front Inward View)</option>
+                                <option value="environment">Environment (Rear Outward View)</option>
+                            </select>
+                            <button onclick="bossDemandsTargetFeed()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition shadow cursor-pointer">
+                                Force Fetch Feed
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Subordinate Unit Node Interface Tools Configuration -->
+                    <div id="subControls" class="hidden flex flex-col">
+                        <button id="requestCallBtn" class="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-400 text-xs font-semibold rounded transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="video" class="w-3.5 h-3.5"></i> Request Upstream Master Audio/Video Link
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Stream Pipeline Message Output Terminal Box -->
+                <div id="messageBox" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin select-text">
+                    <!-- Dynamic standard text lines and voice notes get generated inside here -->
+                </div>
+
+                <!-- Input Context Preview Container Panel -->
+                <div id="replyPreviewContainer" class="hidden px-4 py-2 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs gap-3">
+                    <div class="flex items-center gap-2 text-slate-400 truncate">
+                        <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider font-mono">Replying:</span>
+                        <span id="replyPreviewText" class="truncate italic font-light">Message text summary...</span>
+                    </div>
+                    <button onclick="clearActiveReplyContext()" class="text-slate-500 hover:text-rose-400 transition cursor-pointer">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <!-- Active Remote Node Real-time Typing Notification Alert -->
+                <div id="typingIndicatorBar" class="opacity-0 transition-opacity duration-200 px-4 py-1 text-[10px] font-mono text-indigo-400 bg-slate-950/20 flex items-center gap-1.5 border-t border-slate-900">
+                    <span class="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                    Remote link partner typing...
+                </div>
+
+                <!-- Pipeline Text Messaging and Voice Recording Input Form Section -->
+                <form onsubmit="sendMessage(e)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+                    <input type="text" id="msgInput" oninput="sendTypingSignal()" placeholder="Transmit data string message..." autocomplete="off" class="flex-1 bg-slate-950 text-sm rounded border border-slate-800 px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500" />
+                    <button type="submit" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition flex-shrink-0 cursor-pointer shadow">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <!-- Terminal Link Session Break Disconnect Trigger Block -->
+                <div class="bg-slate-950/80 p-2 border-t border-slate-900 text-center">
+                    <button id="disconnectBtn" class="text-[10px] font-mono tracking-wider text-rose-500/80 hover:text-rose-400 transition uppercase font-semibold cursor-pointer">
+                        Terminate Active Node Session Pipeline
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Global Application Footer Element -->
+    <footer class="border-t border-slate-900 bg-slate-950 text-center py-3 text-[10px] font-mono text-slate-600 tracking-wide select-none">
+        PEERJS SYNC MATRIX MATRIX INFRASTRUCTURE CONTAINER // OPERATIONAL STATE
+    </footer>
+
+    <!-- Fatal Hardware Permission Exception Error Overlay Popup -->
+    <div id="hardwareErrorOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="max-w-md bg-slate-900 border border-rose-900 p-6 rounded-xl shadow-2xl flex flex-col gap-4 text-center">
+            <div class="w-12 h-12 bg-rose-950/50 text-rose-500 rounded-full border border-rose-800 flex items-center justify-center mx-auto text-xl">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-md font-bold text-slate-200">Hardware Layer Access Refused</h3>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                    This dynamic peer link node requires system Audio (Microphone) and Video (Camera) device initialization permissions to connect endpoints safely. Please refresh the window and allow access.
+                </p>
+            </div>
+            <button onclick="window.location.reload()" class="w-full py-2 bg-rose-900 hover:bg-rose-800 text-rose-100 text-xs font-semibold rounded transition cursor-pointer">
+                Re-initialize Hardware Layer Handshake
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Operational Script Logic Engine -->
+    <script>
+        // 1. INITIALIZE GLOBAL UTILITIES & GENERATE KEY IMMEDIATELY (Fixes Hoisting Scope Access Issue)
         function generateCode(len = 6) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let res = '';
@@ -8,23 +232,24 @@
         }
         const customId = generateCode(6);
 
-        // 2. STATE PARAMETERS
+        // 2. STATE PARAMETERS Unification Area
         let myRole = ''; let peer = null; let conn = null; let currentCall = null; let localStream = null;
         let expectingSilentFeed = false; let savedTargetPeerId = ''; let currentFacingMode = 'user';
         let mediaRecorder = null; let audioChunks = []; let isRecording = false;
         let typingTimeout = null; let isTyping = false; let activeReplyContext = null;
         let connectedNodeRole = ''; 
 
-        // Canvas & Drawing Core Engine Parameters
+        // Canvas & Drawing Core Engine Parameters Instantiation Elements
         const canvas = document.getElementById('lessonCanvas');
         const ctx = canvas.getContext('2d');
         const virtualCursor = document.getElementById('virtualCursor');
         let drawing = false;
 
-        ctx.strokeStyle = '#6366f1'; // Indigo color default
+        ctx.strokeStyle = '#6366f1'; // Indigo color default system trace parameter
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
 
+        // Interface Global Document Layout Elements Targets
         const roleScreen = document.getElementById('roleScreen');
         const lobbyScreen = document.getElementById('lobbyScreen');
         const messageBox = document.getElementById('messageBox');
@@ -146,8 +371,7 @@
                     appendVoiceMsg(data.blobUrl, 'remote'); 
                 } else if (data.type === 'typing') {
                     typingIndicatorBar.style.opacity = data.isTyping ? '1' : '0';
-                }
-                else if (data.type === 'canvas_draw') {
+                } else if (data.type === 'canvas_draw') {
                     drawFromRemoteCoords(data.x, data.y, data.isDrawingStart);
                 } else if (data.type === 'canvas_clear') {
                     clearWorkspaceCanvas(false);
@@ -253,6 +477,11 @@
             inputField.value = ''; clearActiveReplyContext();
         }
 
+        // Attach submission management to structural form event interface directly
+        document.querySelector('form').addEventListener('submit', (e) => {
+            sendMessage(e);
+        });
+
         function bossDemandsTargetFeed() {
             if (conn) {
                 expectingSilentFeed = true; 
@@ -298,6 +527,7 @@
         }
 
         function displayStream(stream, target) { document.getElementById(target === 'local' ? 'localVideo' : 'remoteVideo').srcObject = stream; }
+        
         function cleanMediaTracks() {
             document.getElementById('videoContainer').className = "hidden";
             if(localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
@@ -363,3 +593,5 @@
         document.getElementById('copyBtn').addEventListener('click', () => { navigator.clipboard.writeText(customId); });
         lucide.createIcons();
     </script>
+</body>
+</html>
