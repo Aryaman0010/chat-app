@@ -10,8 +10,32 @@
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col justify-center items-center overflow-hidden">
 
-    <main class="w-full max-w-2xl h-[700px] bg-slate-900 border border-slate-800 rounded-xl shadow-xl flex flex-col overflow-hidden">
+    <main class="w-full max-w-2xl h-[700px] bg-slate-900 border border-slate-800 rounded-xl shadow-xl flex flex-col overflow-hidden relative">
         
+        <!-- HARDWARE BLOCKED ERROR OVERLAY -->
+        <div id="hardwareErrorOverlay" class="hidden absolute inset-0 bg-slate-950/95 z-40 flex flex-col justify-center items-center p-8 text-center">
+            <div class="max-w-sm space-y-4">
+                <div class="p-3 bg-rose-500/10 text-rose-400 rounded-full w-fit mx-auto">
+                    <i data-lucide="video-off" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white tracking-tight">Hardware Permissions Required</h2>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    The operational profile requires verified access to your camera and microphone arrays. 
+                </p>
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded text-left space-y-2">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase block">Resolution Protocol:</span>
+                    <ol class="text-[11px] text-slate-300 list-decimal list-inside space-y-1">
+                        <li>Click the camera icon located in your browser URL bar.</li>
+                        <li>Change the permission state to <span class="text-emerald-400">"Always Allow"</span>.</li>
+                        <li>Reload this workspace terminal to re-authenticate.</li>
+                    </ol>
+                </div>
+                <button onclick="window.location.reload()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded text-xs transition">
+                    Reload Terminal
+                </button>
+            </div>
+        </div>
+
         <!-- HEADER ARCHITECTURE -->
         <header class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -188,9 +212,18 @@
         const lobbyScreen = document.getElementById('lobbyScreen');
         const messageBox = document.getElementById('messageBox');
         const typingIndicatorBar = document.getElementById('typingIndicatorBar');
+        const hardwareErrorOverlay = document.getElementById('hardwareErrorOverlay');
         
-        function selectRole(role) {
+        async function selectRole(role) {
             myRole = role;
+            
+            // Trigger early permission check instantly upon selecting the role
+            const permissionsGranted = await requestEarlyHardwarePermissions();
+            if (!permissionsGranted) {
+                hardwareErrorOverlay.classList.remove('hidden');
+                return; // Cease initialization if denied
+            }
+
             roleScreen.classList.add('hidden');
             lobbyScreen.classList.remove('hidden');
             lobbyScreen.classList.add('flex');
@@ -209,6 +242,19 @@
                 document.getElementById('employeeLobby').classList.remove('hidden');
                 initPeer();
                 window.addEventListener('beforeunload', preventEmployeeExit);
+            }
+        }
+
+        // Dedicated routine to handle verification permissions at step 1
+        async function requestEarlyHardwarePermissions() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // Shut down temporary tracks cleanly after verification is validated
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error("Hardware permission verification rejected:", err);
+                return false;
             }
         }
 
@@ -485,10 +531,10 @@
             wrap.className = `flex w-full ${sender === 'local' ? 'justify-end' : 'justify-start'}`;
             
             const bubble = document.createElement('div');
-            // Using standard alignment and properties to let native system Unicode emojis display without layout disruptions
+            // Clean layout alignment configurations to let standard Unicode string emojis display correctly
             bubble.className = `max-w-[75%] rounded px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                 sender === 'local' 
-                ? 'bg-indigo-600 text-white font-medium' 
+                ? 'bg-indigo-600 text-white font-medium shadow' 
                 : 'bg-slate-800 text-slate-200 border border-slate-700'
             }`;
             bubble.textContent = text; 
