@@ -64,70 +64,120 @@
 
     <main class="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto z-10 relative">
         
-        <!-- Role Selection Screen -->
-        <div id="roleScreen" class="w-full max-w-sm bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex flex-col gap-8 my-auto transform transition duration-300">
+        <!-- Auth Screen (Login / Signup) -->
+        <div id="authScreen" class="w-full max-w-md bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex flex-col gap-6 my-auto transform transition duration-300">
             <div class="text-center">
-                <div class="w-16 h-16 bg-gradient-to-tr from-sky-400 to-purple-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 rotate-3">
-                    <i data-lucide="sparkles" class="w-8 h-8 text-white"></i>
-                </div>
-                <h2 class="text-2xl font-black tracking-tight text-zinc-100">Hii, welcome to the chat</h2>
-                <p class="text-xs text-zinc-400 mt-1">Select your access point gateway</p>
+                <h2 id="authTitle" class="text-2xl font-black tracking-tight text-zinc-100">Sign In to Hub</h2>
+                <p id="authSubtitle" class="text-xs text-zinc-400 mt-1">Enter your unique user identification signature</p>
             </div>
-            <div class="flex flex-col gap-3.5">
-                <button onclick="selectRole('boss')" class="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-sky-500/20 cursor-pointer flex items-center justify-center gap-2">
-                    <i data-lucide="shield" class="w-4 h-4"></i> Log In As Hii
+            
+            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-4">
+                <div>
+                    <label class="text-xs text-zinc-400 block mb-1.5 font-medium">Username</label>
+                    <input type="text" id="authUsername" required placeholder="Unique username" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-600" />
+                </div>
+                <div>
+                    <label class="text-xs text-zinc-400 block mb-1.5 font-medium">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-600" />
+                </div>
+                <button type="submit" id="authSubmitBtn" class="w-full mt-2 py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition cursor-pointer">
+                    Sign In
                 </button>
-                <button onclick="selectRole('employee')" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-rose-600/20 cursor-pointer flex items-center justify-center gap-2">
-                    <i data-lucide="user" class="w-4 h-4"></i> Viola
-                </button>
+            </form>
+
+            <div class="text-center text-xs text-zinc-500">
+                <span id="authToggleText">Don't have an account?</span>
+                <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-sky-400 hover:underline font-semibold ml-1 bg-transparent border-none cursor-pointer">Sign Up</button>
             </div>
         </div>
 
-        <!-- Discovery Lobby Space -->
-        <div id="lobbyScreen" class="hidden w-full max-w-sm bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex-col gap-6 my-auto">
-            <div id="bossLobby" class="hidden flex-col gap-4 text-center">
+        <!-- Admin Access Screen -->
+        <div id="adminScreen" class="hidden w-full max-w-md bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex-col gap-6 my-auto">
+            <div class="text-center">
+                <h2 class="text-2xl font-black tracking-tight text-zinc-100 flex items-center justify-center gap-2"><i data-lucide="shield-check" class="text-rose-500"></i> Operational Core Control</h2>
+                <p class="text-xs text-zinc-400 mt-1">Provide master administrative authorization credentials</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="flex flex-col gap-4">
+                <input type="password" id="adminSecretKey" required placeholder="ENTER ADMIN KEY" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-center text-sm font-mono tracking-widest text-white focus:outline-none focus:border-rose-600" />
+                <button type="submit" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition cursor-pointer">
+                    Authorize Session
+                </button>
+            </form>
+            <button onclick="exitAdminView()" class="text-xs text-zinc-500 hover:text-zinc-300 text-center cursor-pointer">Return to Standard Client Login</button>
+        </div>
+
+        <!-- Admin Dashboard Management Panel -->
+        <div id="adminDashboard" class="hidden w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex-col h-[70vh]">
+            <div class="p-6 border-b border-zinc-800 bg-zinc-950/60 flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-semibold text-zinc-300">Your Operational Signature</h3>
-                    <p class="text-xs text-zinc-500 mt-0.5">Share this secure passcode with Viola endpoint</p>
+                    <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2"><i data-lucide="terminal" class="text-rose-500"></i> Registry Node Monitor</h2>
+                    <p class="text-xs text-zinc-500">Directly inspect instances and silently audit active platform channels</p>
                 </div>
-                <div class="flex items-center justify-between bg-zinc-950 px-4 py-3 rounded-xl border border-zinc-800">
-                    <span id="myPeerId" class="text-2xl font-mono font-bold text-white tracking-widest">------</span>
-                    <button id="copyBtn" class="p-2 text-zinc-400 hover:text-white transition cursor-pointer" title="Copy Key">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
-                    </button>
+                <button onclick="exitAdminView()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl transition cursor-pointer">Logout Admin</button>
+            </div>
+            <div class="flex-1 p-6 overflow-y-auto flex flex-col gap-3 scrollbar-none">
+                <span class="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block mb-1">Created Accounts Index</span>
+                <div id="adminUserList" class="flex flex-col gap-2.5">
+                    <!-- Accounts dynamic entries go here -->
                 </div>
             </div>
+        </div>
 
-            <div id="subLobby" class="hidden flex-col gap-4">
-                <div class="text-center">
-                    <h3 class="text-sm font-semibold text-zinc-300">Connect to Hub</h3>
-                    <p class="text-xs text-zinc-500 mt-0.5">Enter the Master validation passcode key</p>
+        <!-- Discovery Connection Lobby Space -->
+        <div id="lobbyScreen" class="hidden w-full max-w-md bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex-col gap-6 my-auto">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-sky-500/10 border border-sky-500/20 rounded-2xl mx-auto flex items-center justify-center mb-3">
+                    <i data-lucide="radio" class="w-6 h-6 text-sky-400"></i>
                 </div>
-                <div class="flex flex-col gap-2">
-                    <input type="text" id="peerIdInput" placeholder="6-DIGIT CORE KEY" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-center font-mono text-sm tracking-widest text-white uppercase focus:outline-none focus:border-zinc-600" />
-                    <button id="connectBtn" class="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition cursor-pointer">
-                        Establish Connection
+                <h3 class="text-lg font-bold text-zinc-100">Welcome, <span id="lobbyGreeting" class="text-sky-400">User</span></h3>
+                <p class="text-xs text-zinc-500 mt-0.5">Your routing node is live. Target a peer identity to initialize.</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="peerIdInput" placeholder="ENTER TARGET USERNAME" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm text-white tracking-wide focus:outline-none focus:border-sky-500" />
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="connectToPeer('chat')" class="py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Text Chat Only
+                    </button>
+                    <button onclick="connectToPeer('media')" class="py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="video" class="w-3.5 h-3.5"></i> Stream Call
                     </button>
                 </div>
             </div>
 
             <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-zinc-500 border-t border-zinc-800">
-                <span>Signal Channel:</span>
-                <span id="statusMessage" class="text-zinc-400">Connecting cloud layer...</span>
+                <span>Routing Signature:</span>
+                <span id="myPeerId" class="text-zinc-400 font-bold">---</span>
             </div>
         </div>
 
         <!-- Integrated Unified Messenger Interface -->
         <div id="activeControls" class="hidden w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex-col h-[78vh] relative">
             
-            <div id="bossVideoTarget" class="relative w-full"></div>
+            <div id="videoLayoutArea" class="hidden w-full bg-zinc-950 border-b border-zinc-800 p-4 transition-all duration-300 relative">
+                <div class="grid grid-cols-2 gap-3 w-full max-w-xl mx-auto">
+                    <div class="aspect-video bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 shadow-inner relative">
+                        <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                        <span class="absolute bottom-2 left-2 bg-black/60 text-[9px] font-mono px-1.5 py-0.5 rounded text-zinc-300">Self Feed</span>
+                    </div>
+                    <div class="aspect-video bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 shadow-inner relative">
+                        <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                        <span id="remoteVideoLabel" class="absolute bottom-2 left-2 bg-black/60 text-[9px] font-mono px-1.5 py-0.5 rounded text-zinc-300">Peer Connection</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Header Controls Panel -->
             <div class="bg-zinc-950/60 p-4 border-b border-zinc-800/80 flex flex-col gap-3 flex-shrink-0 z-20">
                 <div class="flex items-center justify-between w-full">
                     <div class="flex items-center gap-3">
-                        <!-- Left-Corner Clickable Profile Avatar Icon -->
-                        <button onclick="toggleProfilePanel()" class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center cursor-pointer hover:border-zinc-500 transition shadow-inner flex-shrink-0 relative group" title="Open Dashboard Profile">
+                        <button onclick="toggleProfilePanel()" class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center cursor-pointer hover:border-zinc-500 transition shadow-inner flex-shrink-0 relative group">
                             <img id="profilePreviewAvatar" src="" class="w-full h-full object-cover hidden" />
                             <i data-lucide="user" id="profileFallbackIcon" class="w-4 h-4 text-zinc-400 group-hover:text-zinc-200"></i>
                         </button>
@@ -140,22 +190,18 @@
                     </div>
                     
                     <div class="flex items-center gap-1.5">
-                        <div id="bossControls" class="hidden items-center gap-1.5">
-                            <select id="cameraFacingSelect" class="bg-zinc-950 text-zinc-300 border border-zinc-800 text-xs rounded-lg px-2 py-1.5 focus:outline-none">
+                        <div id="mediaSessionControls" class="hidden items-center gap-1.5">
+                            <button onclick="toggleMuteAudio()" id="audioMuteBtn" class="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-300 transition cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
+                            <button onclick="toggleMuteVideo()" id="videoMuteBtn" class="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-300 transition cursor-pointer"><i data-lucide="video" class="w-4 h-4"></i></button>
+                            <select id="cameraFacingSelect" onchange="switchCameraDirection()" class="bg-zinc-950 text-zinc-300 border border-zinc-800 text-xs rounded-lg px-2 py-1.5 focus:outline-none">
                                 <option value="user">Front Cam</option>
                                 <option value="environment">Rear Cam</option>
                             </select>
-                            <button onclick="bossDemandsTargetFeed()" class="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium rounded-lg transition cursor-pointer">
-                                Fetch Feed
-                            </button>
-                            <button onclick="toggleBossLocalFeed()" id="bossFeedToggleBtn" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 text-xs font-medium rounded-lg transition cursor-pointer">
-                                Mute My Feed
-                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Live Dynamic Wallpaper Customizer Row -->
+                <!-- Theme Bar Customizer Row -->
                 <div class="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800/60 w-full overflow-x-auto scrollbar-none">
                     <div class="flex items-center gap-1.5 flex-shrink-0">
                         <span class="text-[10px] uppercase tracking-wider font-mono text-zinc-400 mr-1 flex items-center gap-1"><i data-lucide="palette" class="w-3 h-3"></i> Theme:</span>
@@ -180,7 +226,6 @@
 
             <!-- Chat Grid View Module Container -->
             <div class="flex-1 flex flex-col bg-zinc-950/20 overflow-hidden relative">
-                
                 <div id="messageBox" class="flex-1 p-5 overflow-y-auto flex flex-col gap-4 scrollbar-none select-text"></div>
 
                 <!-- Input Context Preview Section -->
@@ -190,9 +235,7 @@
                         <span class="text-[10px] text-zinc-500 font-mono">Replying:</span>
                         <span id="replyPreviewText" class="truncate italic font-light text-zinc-300">Message content...</span>
                     </div>
-                    <button onclick="clearActiveReplyContext()" class="text-zinc-500 hover:text-zinc-300 transition cursor-pointer">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                    </button>
+                    <button onclick="clearActiveReplyContext()" class="text-zinc-500 hover:text-zinc-300 transition cursor-pointer"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
                 </div>
 
                 <!-- Realtime User Typing Notification -->
@@ -206,38 +249,35 @@
                 <!-- Message Input Control Assembly -->
                 <div class="p-4 bg-zinc-950/40 border-t border-zinc-800/80 flex-shrink-0">
                     <form onsubmit="sendMessage(event)" class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3">
-                        <label class="text-zinc-400 hover:text-zinc-200 transition cursor-pointer flex-shrink-0 p-1" title="Attach Pic/GIF">
+                        <label class="text-zinc-400 hover:text-zinc-200 transition cursor-pointer flex-shrink-0 p-1">
                             <i data-lucide="image" class="w-5 h-5"></i>
                             <input type="file" id="mediaInput" accept="image/*" class="hidden" onchange="handleMediaSelection(this)" />
                         </label>
                         
-                        <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecording()" class="text-zinc-400 hover:text-rose-400 transition flex-shrink-0 p-1 cursor-pointer" title="Record Voice Note">
+                        <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecording()" class="text-zinc-400 hover:text-rose-400 transition flex-shrink-0 p-1 cursor-pointer">
                             <i data-lucide="mic" id="micIcon" class="w-5 h-5"></i>
                         </button>
 
                         <input type="text" id="msgInput" oninput="sendTypingSignal()" placeholder="Type a message..." autocomplete="off" class="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none" />
-                        <button type="submit" class="text-sky-400 hover:text-sky-300 text-sm font-bold transition flex-shrink-0 cursor-pointer px-1">
-                            Send
-                        </button>
+                        <button type="submit" class="text-sky-400 hover:text-sky-300 text-sm font-bold transition flex-shrink-0 cursor-pointer px-1">Send</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Slide-Out Dashboard Profile Panel Backdrop Container -->
+            <!-- Slide-Out Profile Panel -->
             <div id="profileSidePanel" class="absolute inset-y-0 left-0 w-72 bg-zinc-950/98 border-r border-zinc-800/90 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col hidden">
                 <div class="p-4 border-b border-zinc-800 flex items-center justify-between">
                     <span class="text-xs font-bold font-mono tracking-wider text-zinc-400 flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5 text-sky-400"></i> HUB PROFILE LOG</span>
                     <button onclick="toggleProfilePanel()" class="p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                 </div>
                 
-                <!-- Profile Setup View Section -->
                 <div class="p-5 flex flex-col items-center gap-4 text-center border-b border-zinc-800/60 bg-zinc-900/20">
                     <div class="relative group">
                         <div class="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center overflow-hidden shadow-lg relative">
                             <img id="panelAvatarImg" src="" class="w-full h-full object-cover hidden" />
                             <i data-lucide="user" id="panelAvatarFallback" class="w-8 h-8 text-zinc-500"></i>
                         </div>
-                        <label class="absolute bottom-0 right-0 p-1.5 bg-sky-500 hover:bg-sky-600 rounded-full text-white cursor-pointer shadow-md transition flex items-center justify-center border border-zinc-950" title="Upload New PFP">
+                        <label class="absolute bottom-0 right-0 p-1.5 bg-sky-500 hover:bg-sky-600 rounded-full text-white cursor-pointer shadow-md transition flex items-center justify-center border border-zinc-950">
                             <i data-lucide="camera" class="w-3 h-3"></i>
                             <input type="file" id="pfpUploadInput" accept="image/*" class="hidden" onchange="handlePfpUpload(this)" />
                         </label>
@@ -248,7 +288,6 @@
                     </div>
                 </div>
 
-                <!-- Shared Files Tracking Section -->
                 <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
                     <span class="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold block mb-1 flex items-center gap-1"><i data-lucide="paperclip" class="w-3 h-3"></i> Shared Assets Logs</span>
                     <div id="sharedAssetsContainer" class="flex flex-col gap-2 scrollbar-none">
@@ -259,38 +298,40 @@
 
             <!-- Disconnect Termination Bar Component -->
             <div class="bg-zinc-950/60 border-t border-zinc-800/60 px-3 py-2.5 text-center flex-shrink-0">
-                <button id="disconnectBtn" class="text-[10px] font-mono tracking-wider text-zinc-500 hover:text-rose-400 transition uppercase font-semibold cursor-pointer">
-                    Terminate Connection Link
+                <button onclick="terminateSession()" class="text-[10px] font-mono tracking-wider text-zinc-500 hover:text-rose-400 transition uppercase font-semibold cursor-pointer">
+                    Disconnect Session Link
                 </button>
             </div>
         </div>
     </main>
 
-    <footer class="border-t border-zinc-900/40 bg-zinc-950/20 text-center py-3 text-[10px] font-mono text-zinc-600 tracking-wider select-none mt-auto">
-        HI, VIOLA • SECURED PEER HUB LAYER
+    <!-- Admin Invisible Portal & Footer Row -->
+    <footer class="border-t border-zinc-900/40 bg-zinc-950/20 text-center py-4 text-[10px] font-mono text-zinc-600 tracking-wider relative flex items-center justify-center w-full">
+        <span>HI, VIOLA • SECURED PEER HUB LAYER</span>
+        <button onclick="showAdminLogin()" class="absolute right-4 bottom-3 w-6 h-6 rounded-full bg-transparent hover:bg-zinc-800/30 flex items-center justify-center text-zinc-700 hover:text-zinc-500 transition font-sans text-xs font-bold border border-transparent hover:border-zinc-800/80 cursor-pointer" title="Admin System Gateway">@</button>
     </footer>
 
     <script>
-        function generateCode(len = 6) {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let res = '';
-            for(let i=0; i<len; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
-            return res;
-        }
-        const customId = generateCode(6);
+        // --- Authentication & Dummy Local Database System Hook ---
+        // Once you configure your external DB backend, replace these arrays and database endpoints with fetch operations.
+        let localAccountsRegistry = JSON.parse(localStorage.getItem('hub_user_registry')) || [
+            { username: 'hii', password: '123' },
+            { username: 'viola', password: '123' }
+        ];
+        let currentAuthedUser = null;
+        let isSignupMode = false;
 
-        let myRole = ''; let peer = null; let conn = null; let currentCall = null; let localStream = null;
-        let expectingSilentFeed = false; let savedTargetPeerId = ''; let currentFacingMode = 'user';
+        let peer = null; let conn = null; let currentCall = null; let localStream = null;
         let typingTimeout = null; let isTyping = false; let activeReplyContext = null;
-        let bossLocalFeedMuted = false;
-
+        let isAudioMuted = false; let isVideoMuted = false;
+        let trackedSharedAssets = [];
         let mediaRecorder = null; let audioChunks = []; let isRecordingAudio = false;
 
-        // Structured Tracker for Extracted Asset Link Logs
-        let trackedSharedAssets = [];
-
-        const roleScreen = document.getElementById('roleScreen');
+        const authScreen = document.getElementById('authScreen');
+        const adminScreen = document.getElementById('adminScreen');
+        const adminDashboard = document.getElementById('adminDashboard');
         const lobbyScreen = document.getElementById('lobbyScreen');
+        const activeControls = document.getElementById('activeControls');
         const messageBox = document.getElementById('messageBox');
         const typingIndicatorBar = document.getElementById('typingIndicatorBar');
         const replyPreviewContainer = document.getElementById('replyPreviewContainer');
@@ -299,7 +340,122 @@
         const voiceNoteBtn = document.getElementById('voiceNoteBtn');
         const micIcon = document.getElementById('micIcon');
         const profileSidePanel = document.getElementById('profileSidePanel');
-        
+
+        function toggleAuthMode() {
+            isSignupMode = !isSignupMode;
+            document.getElementById('authTitle').textContent = isSignupMode ? "Create Hub Account" : "Sign In to Hub";
+            document.getElementById('authSubtitle').textContent = isSignupMode ? "Choose a unique username for connections" : "Enter your unique user identification signature";
+            document.getElementById('authSubmitBtn').textContent = isSignupMode ? "Create Account" : "Sign In";
+            document.getElementById('authToggleText').textContent = isSignupMode ? "Already have an account?" : "Don't have an account?";
+            document.getElementById('authToggleBtn').textContent = isSignupMode ? "Sign In" : "Sign Up";
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const u = document.getElementById('authUsername').value.trim().toLowerCase();
+            const p = document.getElementById('authPassword').value;
+            if(!u || !p) return;
+
+            if (isSignupMode) {
+                // Hook up to: POST /api/signup
+                if (localAccountsRegistry.some(acc => acc.username === u)) {
+                    alert("This identity signature username is already taken.");
+                    return;
+                }
+                localAccountsRegistry.push({ username: u, password: p });
+                localStorage.setItem('hub_user_registry', JSON.stringify(localAccountsRegistry));
+                alert("Account node created! Logging in...");
+            } else {
+                // Hook up to: POST /api/login
+                const matchedUser = localAccountsRegistry.find(acc => acc.username === u && acc.password === p);
+                if (!matchedUser) {
+                    alert("Invalid routing combination credentials.");
+                    return;
+                }
+            }
+            
+            initializeUserSession(u);
+        }
+
+        function initializeUserSession(username) {
+            currentAuthedUser = username;
+            authScreen.classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
+            lobbyScreen.classList.add('flex');
+            
+            document.getElementById('lobbyGreeting').textContent = username;
+            document.getElementById('panelProfileRoleTitle').textContent = username;
+            document.getElementById('myPeerId').textContent = username.toUpperCase();
+            
+            // Initializing WebRTC Peer bound explicitly to the unique username identity
+            initPeer(username);
+        }
+
+        // --- Administrative Access Management Core Engine ---
+        function showAdminLogin() {
+            // Hiding standard flow layouts to open hidden root access portal
+            authScreen.classList.add('hidden');
+            lobbyScreen.classList.add('hidden');
+            activeControls.classList.add('hidden');
+            adminDashboard.classList.add('hidden');
+            adminScreen.classList.remove('hidden');
+            adminScreen.classList.add('flex');
+        }
+
+        function exitAdminView() {
+            adminScreen.classList.add('hidden');
+            adminDashboard.classList.add('hidden');
+            if (currentAuthedUser) {
+                lobbyScreen.classList.remove('hidden');
+            } else {
+                authScreen.classList.remove('hidden');
+            }
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const key = document.getElementById('adminSecretKey').value;
+            // You can replace this hardcoded administrative key validation checking with an API call
+            if (key === 'admin123') {
+                document.getElementById('adminSecretKey').value = '';
+                adminScreen.classList.add('hidden');
+                adminDashboard.classList.remove('hidden');
+                adminDashboard.classList.add('flex');
+                renderAdminUserRegistry();
+            } else {
+                alert("Access unauthorized.");
+            }
+        }
+
+        function renderAdminUserRegistry() {
+            const container = document.getElementById('adminUserList');
+            container.innerHTML = '';
+            
+            localAccountsRegistry.forEach(acc => {
+                const row = document.createElement('div');
+                row.className = "p-3.5 bg-zinc-950 border border-zinc-850 rounded-xl flex items-center justify-between";
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-mono font-bold text-zinc-400 border border-zinc-700">${acc.username.charAt(0).toUpperCase()}</div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-zinc-200">${acc.username}</span>
+                            <span class="text-[9px] font-mono text-zinc-600">Password Logged Hash</span>
+                        </div>
+                    </div>
+                    <button onclick="adminSilentlyAssumeIdentity('${acc.username}')" class="px-3 py-1.5 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 text-[10px] font-mono font-bold rounded-lg transition cursor-pointer">Assume Access Node</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function adminSilentlyAssumeIdentity(targetUsername) {
+            // Administrative entry: Bypasses user alerts, letting the admin audit operations safely
+            adminDashboard.classList.add('hidden');
+            initializeUserSession(targetUsername);
+            appendSysMsg("ADMIN PRIVILEGE MODE ACTIVE");
+        }
+
+        // --- Core Application Logic Theme Configurator Preset Switchers ---
         function changeBackgroundPreset(presetName) {
             appBody.className = "dynamic-wallpaper text-slate-100 min-h-screen font-sans flex flex-col antialiased relative overflow-x-hidden";
             appBody.style.backgroundImage = '';
@@ -319,7 +475,7 @@
             input.value = '';
         }
 
-        // Profile Panel Navigation Framework
+        // Profile Dashboard Controls
         function toggleProfilePanel() {
             if(profileSidePanel.classList.contains('hidden')) {
                 profileSidePanel.classList.remove('hidden');
@@ -331,7 +487,6 @@
             }
         }
 
-        // Processing Local Personal Avatar Configurations
         function handlePfpUpload(input) {
             if (!input.files || !input.files[0]) return;
             const reader = new FileReader();
@@ -349,7 +504,6 @@
             input.value = '';
         }
 
-        // Extracted Shared Links or Images Engine
         function logSharedAsset(contentStr, type) {
             trackedSharedAssets.push({ data: contentStr, type: type, timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
         }
@@ -376,7 +530,6 @@
             lucide.createIcons();
         }
 
-        // Live Regex or String Pattern Filter for Message Stream
         function executeChatFilterSearch() {
             const query = document.getElementById('chatSearchInput').value.toLowerCase().trim();
             const messageNodes = messageBox.querySelectorAll('[data-msg-text-node]');
@@ -389,123 +542,84 @@
                 if(query === "" || text.includes(query)) {
                     containerWrap.style.display = 'flex';
                 } else {
-                    containerWrap.style.style = 'none'; 
                     containerWrap.setAttribute('style', 'display: none !important');
                 }
             });
         }
 
-        async function selectRole(role) {
-            myRole = role;
-            roleScreen.classList.add('hidden');
-            lobbyScreen.classList.remove('hidden');
-            lobbyScreen.classList.add('flex');
+        // --- WebRTC Peer Framework Pipeline Configuration Methods ---
+        function initPeer(usernameId) {
+            if(peer) peer.destroy();
+            peer = new Peer(usernameId);
+            
+            peer.on('open', (uid) => {
+                document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-sky-400 shadow-md shadow-sky-400/50";
+                document.getElementById('portalSubheading').textContent = `Node: ${uid.toUpperCase()}`;
+            });
+            
+            peer.on('connection', (incoming) => {
+                conn = incoming;
+                setupDataHandlers();
+            });
+            
+            peer.on('call', (call) => {
+                currentCall = call;
+                document.getElementById('videoLayoutArea').classList.remove('hidden');
+                document.getElementById('mediaSessionControls').classList.remove('hidden');
+                document.getElementById('mediaSessionControls').classList.add('flex');
+                
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                    localStream = stream;
+                    document.getElementById('localVideo').srcObject = stream;
+                    call.answer(stream);
+                    call.on('stream', (remoteStream) => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+                    call.on('close', () => cleanMediaTracks());
+                }).catch(err => console.error("Media error", err));
+            });
+        }
 
-            const statusDot = document.getElementById('connectionStatusDot');
-            const subHeading = document.getElementById('portalSubheading');
+        function connectToPeer(mode) {
+            const targetUsername = document.getElementById('peerIdInput').value.trim().toLowerCase();
+            if(!targetUsername || targetUsername === currentAuthedUser) {
+                alert("Please declare a valid external peer target user signature node.");
+                return;
+            }
 
-            document.getElementById('panelProfileRoleTitle').textContent = role === 'boss' ? 'Hii (Executive)' : 'Viola';
+            conn = peer.connect(targetUsername);
+            setupDataHandlers();
 
-            if (role === 'boss') {
-                subHeading.textContent = 'Status: Hii (Executive)';
-                statusDot.className = "h-2.5 w-2.5 rounded-full bg-sky-400 shadow-md shadow-sky-400/50";
-                document.getElementById('bossLobby').classList.remove('hidden');
-                injectBossVideoLayout();
-                initPeer(customId);
-            } else {
-                subHeading.textContent = 'Status: Viola';
-                statusDot.className = "h-2.5 w-2.5 rounded-full bg-rose-500 shadow-md shadow-rose-500/50";
-                document.getElementById('subLobby').classList.remove('hidden');
-                initPeer();
-                window.addEventListener('beforeunload', preventTerminalExit);
+            if (mode === 'media') {
+                document.getElementById('videoLayoutArea').classList.remove('hidden');
+                document.getElementById('mediaSessionControls').classList.remove('hidden');
+                document.getElementById('mediaSessionControls').classList.add('flex');
+                
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                    localStream = stream;
+                    document.getElementById('localVideo').srcObject = stream;
+                    const call = peer.call(targetUsername, stream, { metadata: { facingMode: 'user' } });
+                    currentCall = call;
+                    call.on('stream', (remoteStream) => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+                    call.on('close', () => cleanMediaTracks());
+                }).catch(err => console.error(err));
             }
         }
-
-        function injectBossVideoLayout() {
-            const container = document.createElement('div');
-            container.id = 'videoContainer';
-            container.className = 'hidden absolute top-24 right-4 z-30 flex gap-2 pointer-events-none';
-            container.innerHTML = `
-                <div id="localVideoWrapper" class="w-24 sm:w-28 aspect-video bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-xl relative">
-                    <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                    <span class="absolute bottom-1 left-1 bg-black/60 text-[8px] font-mono px-1 rounded text-white">Self</span>
-                </div>
-                <div id="remoteVideoWrapper" class="w-24 sm:w-28 aspect-video bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-xl relative">
-                    <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-                    <span class="absolute bottom-1 left-1 bg-black/60 text-[8px] font-mono px-1 rounded text-white">Viola</span>
-                </div>
-            `;
-            document.getElementById('bossVideoTarget').appendChild(container);
-        }
-
-        function preventTerminalExit(e) {
-            if (conn) { e.preventDefault(); e.returnValue = 'Operational Link Active.'; return e.returnValue; }
-        }
-
-        function initPeer(id = null) {
-            peer = id ? new Peer(id) : new Peer();
-            peer.on('open', (uid) => {
-                document.getElementById('myPeerId').textContent = uid;
-                document.getElementById('statusMessage').textContent = "Signaling channel open. Ready.";
-            });
-            peer.on('connection', (incoming) => {
-                if(myRole !== 'boss') { incoming.close(); return; }
-                conn = incoming; setupDataHandlers();
-            });
-            peer.on('call', (call) => {
-                if (myRole === 'boss') {
-                    if (expectingSilentFeed) { expectingSilentFeed = false; call.answer(); handleStream(call); } 
-                    else {
-                        if (bossLocalFeedMuted) {
-                            call.answer(); handleStream(call);
-                        } else {
-                            navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-                                localStream = stream;
-                                document.getElementById('videoContainer').classList.remove('hidden');
-                                document.getElementById('localVideoWrapper').classList.remove('hidden');
-                                displayStream(localStream, 'local');
-                                call.answer(localStream); handleStream(call);
-                            });
-                        }
-                    }
-                } else {
-                    currentFacingMode = call.metadata && call.metadata.facingMode ? call.metadata.facingMode : 'user';
-                    navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true }).then((stream) => {
-                        localStream = stream; 
-                        call.answer(stream); 
-                        currentCall = call;
-                        call.on('close', () => cleanMediaTracks());
-                    }).catch(err => console.error(err));
-                }
-            });
-        }
-
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            const target = document.getElementById('peerIdInput').value.trim().toUpperCase();
-            if(!target) return;
-            savedTargetPeerId = target; 
-            conn = peer.connect(target, { metadata: { role: myRole } }); 
-            setupDataHandlers();
-        });
 
         function setupDataHandlers() {
             conn.on('open', () => {
                 lobbyScreen.classList.add('hidden');
-                document.getElementById('activeControls').classList.remove('hidden');
-                document.getElementById('activeControls').classList.add('flex');
-                if (myRole === 'boss') document.getElementById('bossControls').classList.remove('hidden');
+                activeControls.classList.remove('hidden');
+                activeControls.classList.add('flex');
                 document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50";
-                document.getElementById('portalSubheading').textContent = `Connected Link Live`;
-                appendSysMsg(`Direct Pipeline Connected.`);
-                if(myRole === 'boss') conn.send({ type: 'init_handshake_confirmation', role: 'boss' });
+                document.getElementById('remotePointerStatus').textContent = `Connected with @${conn.peer}`;
+                appendSysMsg(`Secure end-to-end routing pipeline operational.`);
             });
 
             conn.on('data', (data) => {
-                if (data.type === 'init_handshake_confirmation') {
-                    document.getElementById('remotePointerStatus').textContent = "Controlled by Executive Hub";
-                } else if (data.type === 'force_stream_instruction') { 
-                    executeSilentStreamUpload(data.facingMode); 
-                } else if (data.type === 'msg') { 
+                if (data.type === 'msg') { 
                     appendMsg(data.body, 'remote', data.replyData, data.msgType); 
                 } else if (data.type === 'typing') {
                     typingIndicatorBar.style.opacity = data.isTyping ? '1' : '0';
@@ -551,7 +665,6 @@
             conn.send({type: 'msg', body: val, replyData: payloadReply, msgType: 'text'});
             appendMsg(val, 'local', payloadReply, 'text');
             
-            // Checking if text payload contains valid URL configurations
             if(/https?:\/\/[^\s]+/.test(val)) {
                 const linkMatch = val.match(/https?:\/\/[^\s]+/)[0];
                 logSharedAsset(linkMatch, 'link');
@@ -582,11 +695,7 @@
                     const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioChunks = [];
                     mediaRecorder = new MediaRecorder(audioStream);
-                    
-                    mediaRecorder.ondataavailable = (e) => {
-                        if (e.data.size > 0) audioChunks.push(e.data);
-                    };
-
+                    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
                     mediaRecorder.onstop = () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
@@ -600,94 +709,50 @@
                         reader.readAsDataURL(audioBlob);
                         audioStream.getTracks().forEach(track => track.stop());
                     };
-
                     mediaRecorder.start();
                     isRecordingAudio = true;
-                    voiceNoteBtn.classList.remove('text-zinc-400');
                     voiceNoteBtn.classList.add('text-rose-500', 'animate-pulse');
                     micIcon.setAttribute('data-lucide', 'square');
                     lucide.createIcons();
-                } catch (err) { console.error("Audio capture failed", err); }
+                } catch (err) { console.error(err); }
             } else {
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                 isRecordingAudio = false;
                 voiceNoteBtn.classList.remove('text-rose-500', 'animate-pulse');
-                voiceNoteBtn.classList.add('text-zinc-400');
                 micIcon.setAttribute('data-lucide', 'mic');
                 lucide.createIcons();
             }
         }
 
-        function copyMessageToClipboard(textToCopy) {
-            if(textToCopy.startsWith('data:audio') || textToCopy.startsWith('data:image')) return;
-            navigator.clipboard.writeText(textToCopy);
+        function toggleMuteAudio() {
+            if(!localStream) return;
+            isAudioMuted = !isAudioMuted;
+            localStream.getAudioTracks().forEach(t => t.enabled = !isAudioMuted);
+            document.getElementById('audioMuteBtn').classList.toggle('bg-rose-600/20');
+            document.getElementById('audioMuteBtn').classList.toggle('text-rose-400');
         }
 
-        function bossDemandsTargetFeed() {
-            if (conn && myRole === 'boss') {
-                expectingSilentFeed = true; 
-                const selectedCamera = document.getElementById('cameraFacingSelect').value;
-                conn.send({ type: 'force_stream_instruction', facingMode: selectedCamera });
+        function toggleMuteVideo() {
+            if(!localStream) return;
+            isVideoMuted = !isVideoMuted;
+            localStream.getVideoTracks().forEach(t => t.enabled = !isVideoMuted);
+            document.getElementById('videoMuteBtn').classList.toggle('bg-rose-600/20');
+            document.getElementById('videoMuteBtn').classList.toggle('text-rose-400');
+        }
+
+        async function switchCameraDirection() {
+            if(!localStream || !currentCall) return;
+            const facing = document.getElementById('cameraFacingSelect').value;
+            localStream.getVideoTracks().forEach(t => t.stop());
+            
+            const nextStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+            const videoTrack = nextStream.getVideoTracks()[0];
+            
+            if(currentCall.peerConnection) {
+                const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                if(sender) sender.replaceTrack(videoTrack);
             }
-        }
-
-        function toggleBossLocalFeed() {
-            if (myRole !== 'boss') return;
-            bossLocalFeedMuted = !bossLocalFeedMuted;
-            const btn = document.getElementById('bossFeedToggleBtn');
-            if (bossLocalFeedMuted) {
-                btn.textContent = "Unmute My Feed";
-                btn.className = "px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-medium rounded-lg transition cursor-pointer";
-                if(localStream) {
-                    localStream.getVideoTracks().forEach(track => track.enabled = false);
-                    document.getElementById('localVideoWrapper').classList.add('hidden');
-                }
-            } else {
-                btn.textContent = "Mute My Feed";
-                btn.className = "px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 text-xs font-medium rounded-lg transition cursor-pointer";
-                if(localStream) {
-                    localStream.getVideoTracks().forEach(track => track.enabled = true);
-                    document.getElementById('localVideoWrapper').classList.remove('hidden');
-                }
-            }
-        }
-
-        async function executeSilentStreamUpload(facingModeSetting) {
-            try {
-                if(localStream) { localStream.getTracks().forEach(track => track.stop()); }
-                currentFacingMode = facingModeSetting || 'user';
-                localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true });
-                const call = peer.call(conn.peer, localStream, { metadata: { facingMode: currentFacingMode } });
-                currentCall = call;
-                call.on('close', () => cleanMediaTracks());
-            } catch (err) { console.error(err); }
-        }
-
-        function handleStream(call) {
-            if (myRole !== 'boss') return;
-            currentCall = call;
-            const targetContainer = document.getElementById('videoContainer');
-            if (targetContainer) {
-                targetContainer.classList.remove('hidden');
-                if (bossLocalFeedMuted) document.getElementById('localVideoWrapper').classList.add('hidden'); 
-            }
-            call.on('stream', (remoteStream) => displayStream(remoteStream, 'remote'));
-            call.on('close', () => cleanMediaTracks());
-        }
-
-        function displayStream(stream, target) { 
-            if (myRole !== 'boss') return;
-            const el = document.getElementById(target === 'local' ? 'localVideo' : 'remoteVideo');
-            if(el) el.srcObject = stream; 
-        }
-        
-        function cleanMediaTracks() {
-            if (myRole === 'boss') {
-                const targetContainer = document.getElementById('videoContainer');
-                if (targetContainer) targetContainer.classList.add('hidden');
-            }
-            if(localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
-            if(currentCall) { currentCall.close(); currentCall = null; }
+            document.getElementById('localVideo').srcObject = nextStream;
         }
 
         function appendMsg(content, sender, replyData = null, msgType = 'text') {
@@ -707,7 +772,6 @@
                 bubble.appendChild(q);
             }
 
-            // Target node flag for keyword text searching
             const textContentNode = document.createElement('span');
             textContentNode.setAttribute('data-msg-text-node', 'true');
 
@@ -722,9 +786,8 @@
                 if(sender === 'remote') logSharedAsset(content, 'image');
             } else if(msgType === 'audio') {
                 const aud = document.createElement('audio');
-                aud.src = content;
-                aud.controls = true;
-                aud.className = 'max-w-[240px] h-8 rounded accent-sky-500 brightness-90 filter invert font-sans';
+                aud.src = content; aud.controls = true;
+                aud.className = 'max-w-[240px] h-8 rounded accent-sky-500 brightness-90 filter invert';
                 bubble.appendChild(aud);
                 textContentNode.textContent = "[voice note]";
                 bubble.appendChild(textContentNode);
@@ -744,22 +807,10 @@
             replyBtn.onclick = () => setActiveReplyContext(content, sender === 'local' ? 'Self' : 'Remote');
             actionContainer.appendChild(replyBtn);
 
-            if(msgType === 'text') {
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
-                copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
-                copyBtn.onclick = () => copyMessageToClipboard(content);
-                actionContainer.appendChild(copyBtn);
-            }
-
-            wrap.appendChild(bubble); 
-            wrap.appendChild(actionContainer);
+            wrap.appendChild(bubble); wrap.appendChild(actionContainer);
             messageBox.appendChild(wrap);
-            
             lucide.createIcons(); 
             messageBox.scrollTop = messageBox.scrollHeight;
-            
-            // Re-run filter adjustments if query active during transmission
             if(document.getElementById('chatSearchInput').value.trim() !== "") executeChatFilterSearch();
         }
 
@@ -769,37 +820,24 @@
             n.textContent = text; messageBox.appendChild(n);
         }
 
-        document.getElementById('disconnectBtn').addEventListener('click', () => {
-            if (conn) conn.close();
-            window.removeEventListener('beforeunload', preventTerminalExit);
-            terminateSession();
-        });
-
-        function terminateSession() {
-            cleanMediaTracks(); conn = null; messageBox.innerHTML = ''; clearActiveReplyContext();
-            trackedSharedAssets = [];
-            
-            document.getElementById('profilePreviewAvatar').src = '';
-            document.getElementById('profilePreviewAvatar').classList.add('hidden');
-            document.getElementById('profileFallbackIcon').classList.remove('hidden');
-            document.getElementById('panelAvatarImg').src = '';
-            document.getElementById('panelAvatarImg').classList.add('hidden');
-            document.getElementById('panelAvatarFallback').classList.remove('hidden');
-            document.getElementById('chatSearchInput').value = '';
-            profileSidePanel.classList.add('hidden');
-
-            const vBox = document.getElementById('videoContainer');
-            if(vBox) vBox.remove(); 
-
-            document.getElementById('activeControls').classList.add('hidden');
-            document.getElementById('bossControls').classList.add('hidden');
-            roleScreen.classList.remove('hidden'); lobbyScreen.classList.add('hidden');
-            document.getElementById('bossLobby').classList.add('hidden'); document.getElementById('subLobby').classList.add('hidden');
-            document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-zinc-600";
-            document.getElementById('portalSubheading').textContent = 'Terminal Offline';
+        function cleanMediaTracks() {
+            document.getElementById('videoLayoutArea').classList.add('hidden');
+            document.getElementById('mediaSessionControls').classList.add('hidden');
+            if(localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+            if(currentCall) { currentCall.close(); currentCall = null; }
         }
 
-        document.getElementById('copyBtn').addEventListener('click', () => { navigator.clipboard.writeText(customId); });
+        function terminateSession() {
+            cleanMediaTracks(); if(conn) conn.close(); conn = null; messageBox.innerHTML = ''; clearActiveReplyContext();
+            trackedSharedAssets = [];
+            document.getElementById('chatSearchInput').value = '';
+            profileSidePanel.classList.add('hidden');
+            activeControls.classList.add('hidden');
+            lobbyScreen.classList.remove('hidden');
+            document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-sky-400";
+            document.getElementById('portalSubheading').textContent = `Node: ${currentAuthedUser.toUpperCase()}`;
+        }
+
         lucide.createIcons();
     </script>
 </body>
