@@ -11,7 +11,6 @@
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Dynamic Theme Target Class */
         .dynamic-wallpaper {
             background-color: #0c0a09;
             background-size: cover;
@@ -20,14 +19,12 @@
             transition: background 0.4s ease, background-color 0.4s ease;
         }
 
-        /* Preset 1: Moving Doodles */
         .theme-doodles {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M9 15c2 4 7 1 9-2s-3-7-6-5-4 4-3 7zm45 70c-3-2-8 1-6 5s6 2 7-1-4-5-4-4zm40-50c4 1 6-4 3-7s-7 1-6 5 4 2 3 2zm-70 20c1 4 6 2 6-2s-5-4-6 0zm90 25c-2-3-7 0-6 4s6 3 7-1-4-4-4-3z' fill='%23a855f7' fill-opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='3' fill='%2338bdf8' fill-opacity='0.2'/%3E%3Ccircle cx='80' cy='90' r='4' fill='%23f43f5e' fill-opacity='0.2'/%3E%3Cpath d='M100 10c2-2 5-2 5 2s-3 5-5 2z' fill='%23eab308' fill-opacity='0.15'/%3E%3C/svg%3E");
             animation: moveDoodles 35s linear infinite;
             background-size: auto;
         }
 
-        /* Preset 2: Graphite Grid Pattern */
         .theme-graphite {
             background-color: #1e1e24;
             background-image: 
@@ -37,11 +34,10 @@
             animation: none;
         }
 
-        /* Preset 3: Modern CSS Blobs */
         .theme-blobs {
             background-color: #0b0f19;
-            background-image: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.12) 0$, transparent 40%),
-                              radial-gradient(circle at 80% 70%, rgba(244, 63, 94, 0.12) 0$, transparent 45%);
+            background-image: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+                              radial-gradient(circle at 80% 70%, rgba(244, 63, 94, 0.12) 0%, transparent 45%);
             animation: none;
             background-size: cover;
         }
@@ -54,7 +50,6 @@
 </head>
 <body id="appBody" class="dynamic-wallpaper theme-doodles text-slate-100 min-h-screen font-sans flex flex-col antialiased relative overflow-x-hidden">
 
-    <!-- App Header Layout -->
     <header class="border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
             <span class="font-extrabold tracking-wider text-2xl bg-gradient-to-r from-sky-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">hii, Viola</span>
@@ -67,10 +62,9 @@
         </div>
     </header>
 
-    <!-- Main View Window -->
-    <main class="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto z-10">
+    <main class="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto z-10 relative">
         
-        <!-- Role Selection State Screen -->
+        <!-- Role Selection Screen -->
         <div id="roleScreen" class="w-full max-w-sm bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-8 rounded-3xl shadow-2xl flex flex-col gap-8 my-auto transform transition duration-300">
             <div class="text-center">
                 <div class="w-16 h-16 bg-gradient-to-tr from-sky-400 to-purple-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 rotate-3">
@@ -126,15 +120,23 @@
         <!-- Integrated Unified Messenger Interface -->
         <div id="activeControls" class="hidden w-full max-w-2xl bg-zinc-900/95 backdrop-blur-md border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex-col h-[78vh] relative">
             
-            <!-- Structural Container for Video Injection on Boss Side -->
             <div id="bossVideoTarget" class="relative w-full"></div>
 
             <!-- Header Controls Panel -->
             <div class="bg-zinc-950/60 p-4 border-b border-zinc-800/80 flex flex-col gap-3 flex-shrink-0 z-20">
                 <div class="flex items-center justify-between w-full">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span id="remotePointerStatus" class="text-xs font-semibold text-zinc-300">Pipeline Stable</span>
+                    <div class="flex items-center gap-3">
+                        <!-- Left-Corner Clickable Profile Avatar Icon -->
+                        <button onclick="toggleProfilePanel()" class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center cursor-pointer hover:border-zinc-500 transition shadow-inner flex-shrink-0 relative group" title="Open Dashboard Profile">
+                            <img id="profilePreviewAvatar" src="" class="w-full h-full object-cover hidden" />
+                            <i data-lucide="user" id="profileFallbackIcon" class="w-4 h-4 text-zinc-400 group-hover:text-zinc-200"></i>
+                        </button>
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span id="remotePointerStatus" class="text-xs font-semibold text-zinc-300">Pipeline Stable</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="flex items-center gap-1.5">
@@ -166,15 +168,20 @@
                         <input type="file" id="wallpaperUploadInput" accept="image/*" class="hidden" onchange="handleWallpaperUpload(this)" />
                     </label>
                 </div>
+
+                <!-- Chat Context Search System Input -->
+                <div class="relative w-full mt-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <input type="text" id="chatSearchInput" oninput="executeChatFilterSearch()" placeholder="Search specified word or sentence in chat stream..." class="w-full bg-zinc-950/80 text-xs border border-zinc-800/80 rounded-xl pl-9 pr-4 py-2 text-zinc-300 focus:outline-none focus:border-zinc-700 tracking-wide transition placeholder-zinc-600" />
+                </div>
             </div>
 
             <!-- Chat Grid View Module Container -->
             <div class="flex-1 flex flex-col bg-zinc-950/20 overflow-hidden relative">
                 
-                <!-- Chat Feed Stream Box -->
-                <div id="messageBox" class="flex-1 p-5 overflow-y-auto flex flex-col gap-4 scrollbar-none select-text">
-                    <!-- Messaging rows render dynamically inside here -->
-                </div>
+                <div id="messageBox" class="flex-1 p-5 overflow-y-auto flex flex-col gap-4 scrollbar-none select-text"></div>
 
                 <!-- Input Context Preview Section -->
                 <div id="replyPreviewContainer" class="hidden px-4 py-2 bg-zinc-900 border-t border-zinc-800 flex items-center justify-between text-xs gap-3">
@@ -203,11 +210,50 @@
                             <i data-lucide="image" class="w-5 h-5"></i>
                             <input type="file" id="mediaInput" accept="image/*" class="hidden" onchange="handleMediaSelection(this)" />
                         </label>
+                        
+                        <button type="button" id="voiceNoteBtn" onclick="toggleVoiceRecording()" class="text-zinc-400 hover:text-rose-400 transition flex-shrink-0 p-1 cursor-pointer" title="Record Voice Note">
+                            <i data-lucide="mic" id="micIcon" class="w-5 h-5"></i>
+                        </button>
+
                         <input type="text" id="msgInput" oninput="sendTypingSignal()" placeholder="Type a message..." autocomplete="off" class="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none" />
                         <button type="submit" class="text-sky-400 hover:text-sky-300 text-sm font-bold transition flex-shrink-0 cursor-pointer px-1">
                             Send
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Slide-Out Dashboard Profile Panel Backdrop Container -->
+            <div id="profileSidePanel" class="absolute inset-y-0 left-0 w-72 bg-zinc-950/98 border-r border-zinc-800/90 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col hidden">
+                <div class="p-4 border-b border-zinc-800 flex items-center justify-between">
+                    <span class="text-xs font-bold font-mono tracking-wider text-zinc-400 flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5 text-sky-400"></i> HUB PROFILE LOG</span>
+                    <button onclick="toggleProfilePanel()" class="p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                </div>
+                
+                <!-- Profile Setup View Section -->
+                <div class="p-5 flex flex-col items-center gap-4 text-center border-b border-zinc-800/60 bg-zinc-900/20">
+                    <div class="relative group">
+                        <div class="w-20 h-20 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center overflow-hidden shadow-lg relative">
+                            <img id="panelAvatarImg" src="" class="w-full h-full object-cover hidden" />
+                            <i data-lucide="user" id="panelAvatarFallback" class="w-8 h-8 text-zinc-500"></i>
+                        </div>
+                        <label class="absolute bottom-0 right-0 p-1.5 bg-sky-500 hover:bg-sky-600 rounded-full text-white cursor-pointer shadow-md transition flex items-center justify-center border border-zinc-950" title="Upload New PFP">
+                            <i data-lucide="camera" class="w-3 h-3"></i>
+                            <input type="file" id="pfpUploadInput" accept="image/*" class="hidden" onchange="handlePfpUpload(this)" />
+                        </label>
+                    </div>
+                    <div>
+                        <h4 id="panelProfileRoleTitle" class="text-sm font-bold text-zinc-200">User Identity</h4>
+                        <p class="text-[10px] text-zinc-500 font-mono tracking-wide mt-0.5">Secure Shared Nodes Instance</p>
+                    </div>
+                </div>
+
+                <!-- Shared Files Tracking Section -->
+                <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                    <span class="text-[10px] uppercase font-mono tracking-widest text-zinc-500 font-bold block mb-1 flex items-center gap-1"><i data-lucide="paperclip" class="w-3 h-3"></i> Shared Assets Logs</span>
+                    <div id="sharedAssetsContainer" class="flex flex-col gap-2 scrollbar-none">
+                        <p class="text-[11px] text-zinc-600 italic">No assets or links processed yet.</p>
+                    </div>
                 </div>
             </div>
 
@@ -238,6 +284,11 @@
         let typingTimeout = null; let isTyping = false; let activeReplyContext = null;
         let bossLocalFeedMuted = false;
 
+        let mediaRecorder = null; let audioChunks = []; let isRecordingAudio = false;
+
+        // Structured Tracker for Extracted Asset Link Logs
+        let trackedSharedAssets = [];
+
         const roleScreen = document.getElementById('roleScreen');
         const lobbyScreen = document.getElementById('lobbyScreen');
         const messageBox = document.getElementById('messageBox');
@@ -245,18 +296,18 @@
         const replyPreviewContainer = document.getElementById('replyPreviewContainer');
         const replyPreviewText = document.getElementById('replyPreviewText');
         const appBody = document.getElementById('appBody');
+        const voiceNoteBtn = document.getElementById('voiceNoteBtn');
+        const micIcon = document.getElementById('micIcon');
+        const profileSidePanel = document.getElementById('profileSidePanel');
         
-        // Theme preset manager
         function changeBackgroundPreset(presetName) {
             appBody.className = "dynamic-wallpaper text-slate-100 min-h-screen font-sans flex flex-col antialiased relative overflow-x-hidden";
             appBody.style.backgroundImage = '';
-            
             if(presetName === 'doodles') appBody.classList.add('theme-doodles');
             else if(presetName === 'graphite') appBody.classList.add('theme-graphite');
             else if(presetName === 'blobs') appBody.classList.add('theme-blobs');
         }
 
-        // Custom image upload background processor
         function handleWallpaperUpload(input) {
             if (!input.files || !input.files[0]) return;
             const reader = new FileReader();
@@ -268,6 +319,82 @@
             input.value = '';
         }
 
+        // Profile Panel Navigation Framework
+        function toggleProfilePanel() {
+            if(profileSidePanel.classList.contains('hidden')) {
+                profileSidePanel.classList.remove('hidden');
+                setTimeout(() => profileSidePanel.classList.remove('-translate-x-full'), 10);
+                populateSharedAssetsView();
+            } else {
+                profileSidePanel.classList.add('-translate-x-full');
+                setTimeout(() => profileSidePanel.classList.add('hidden'), 300);
+            }
+        }
+
+        // Processing Local Personal Avatar Configurations
+        function handlePfpUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgData = e.target.result;
+                document.getElementById('profilePreviewAvatar').src = imgData;
+                document.getElementById('profilePreviewAvatar').classList.remove('hidden');
+                document.getElementById('profileFallbackIcon').classList.add('hidden');
+                
+                document.getElementById('panelAvatarImg').src = imgData;
+                document.getElementById('panelAvatarImg').classList.remove('hidden');
+                document.getElementById('panelAvatarFallback').classList.add('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
+        }
+
+        // Extracted Shared Links or Images Engine
+        function logSharedAsset(contentStr, type) {
+            trackedSharedAssets.push({ data: contentStr, type: type, timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+        }
+
+        function populateSharedAssetsView() {
+            const box = document.getElementById('sharedAssetsContainer');
+            if(trackedSharedAssets.length === 0) {
+                box.innerHTML = `<p class="text-[11px] text-zinc-600 italic">No assets or links processed yet.</p>`;
+                return;
+            }
+            box.innerHTML = '';
+            trackedSharedAssets.forEach(item => {
+                const row = document.createElement('div');
+                row.className = "p-2 rounded bg-zinc-900 border border-zinc-800/80 flex items-center gap-2 overflow-hidden truncate max-w-full";
+                if(item.type === 'image') {
+                    row.innerHTML = `<img src="${item.data}" class="w-7 h-7 object-cover rounded flex-shrink-0" />
+                                     <div class="truncate flex-1"><span class="text-[10px] block font-mono text-zinc-400">Shared Image</span></div>`;
+                } else if(item.type === 'link') {
+                    row.innerHTML = `<i data-lucide="link" class="w-4 h-4 text-sky-400 flex-shrink-0"></i>
+                                     <div class="truncate flex-1"><a href="${item.data}" target="_blank" class="text-[10px] text-sky-400 underline font-mono truncate block">${item.data}</a></div>`;
+                }
+                box.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        // Live Regex or String Pattern Filter for Message Stream
+        function executeChatFilterSearch() {
+            const query = document.getElementById('chatSearchInput').value.toLowerCase().trim();
+            const messageNodes = messageBox.querySelectorAll('[data-msg-text-node]');
+            
+            messageNodes.forEach(node => {
+                const text = node.textContent.toLowerCase();
+                const containerWrap = node.closest('.group');
+                if(!containerWrap) return;
+                
+                if(query === "" || text.includes(query)) {
+                    containerWrap.style.display = 'flex';
+                } else {
+                    containerWrap.style.style = 'none'; 
+                    containerWrap.setAttribute('style', 'display: none !important');
+                }
+            });
+        }
+
         async function selectRole(role) {
             myRole = role;
             roleScreen.classList.add('hidden');
@@ -276,6 +403,8 @@
 
             const statusDot = document.getElementById('connectionStatusDot');
             const subHeading = document.getElementById('portalSubheading');
+
+            document.getElementById('panelProfileRoleTitle').textContent = role === 'boss' ? 'Hii (Executive)' : 'Viola';
 
             if (role === 'boss') {
                 subHeading.textContent = 'Status: Hii (Executive)';
@@ -313,7 +442,6 @@
             if (conn) { e.preventDefault(); e.returnValue = 'Operational Link Active.'; return e.returnValue; }
         }
 
-        /* [The rest of the structural PeerJS core, media tracking, and messaging infrastructure continues precisely below] */
         function initPeer(id = null) {
             peer = id ? new Peer(id) : new Peer();
             peer.on('open', (uid) => {
@@ -365,18 +493,11 @@
                 lobbyScreen.classList.add('hidden');
                 document.getElementById('activeControls').classList.remove('hidden');
                 document.getElementById('activeControls').classList.add('flex');
-                
-                if (myRole === 'boss') {
-                    document.getElementById('bossControls').classList.remove('hidden');
-                }
-                
+                if (myRole === 'boss') document.getElementById('bossControls').classList.remove('hidden');
                 document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50";
                 document.getElementById('portalSubheading').textContent = `Connected Link Live`;
                 appendSysMsg(`Direct Pipeline Connected.`);
-                
-                if(myRole === 'boss') {
-                    conn.send({ type: 'init_handshake_confirmation', role: 'boss' });
-                }
+                if(myRole === 'boss') conn.send({ type: 'init_handshake_confirmation', role: 'boss' });
             });
 
             conn.on('data', (data) => {
@@ -403,7 +524,7 @@
 
         function setActiveReplyContext(textStr, senderLabel) {
             activeReplyContext = { text: textStr, sender: senderLabel };
-            replyPreviewText.textContent = textStr.startsWith('data:image') ? '[Image]' : textStr;
+            replyPreviewText.textContent = textStr.startsWith('data:image') ? '[Image]' : (textStr.startsWith('data:audio') ? '[Voice Note]' : textStr);
             replyPreviewContainer.classList.remove('hidden');
         }
 
@@ -429,6 +550,13 @@
 
             conn.send({type: 'msg', body: val, replyData: payloadReply, msgType: 'text'});
             appendMsg(val, 'local', payloadReply, 'text');
+            
+            // Checking if text payload contains valid URL configurations
+            if(/https?:\/\/[^\s]+/.test(val)) {
+                const linkMatch = val.match(/https?:\/\/[^\s]+/)[0];
+                logSharedAsset(linkMatch, 'link');
+            }
+
             inputField.value = ''; clearActiveReplyContext();
         }
 
@@ -438,16 +566,60 @@
             reader.onload = function(e) {
                 const base64Data = e.target.result;
                 const payloadReply = activeReplyContext ? { ...activeReplyContext } : null;
-                
                 conn.send({ type: 'msg', body: base64Data, replyData: payloadReply, msgType: 'image' });
                 appendMsg(base64Data, 'local', payloadReply, 'image');
+                logSharedAsset(base64Data, 'image');
                 clearActiveReplyContext();
             };
             reader.readAsDataURL(input.files[0]);
             input.value = '';
         }
 
+        async function toggleVoiceRecording() {
+            if (!conn) return;
+            if (!isRecordingAudio) {
+                try {
+                    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioChunks = [];
+                    mediaRecorder = new MediaRecorder(audioStream);
+                    
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64Audio = reader.result;
+                            const payloadReply = activeReplyContext ? { ...activeReplyContext } : null;
+                            conn.send({ type: 'msg', body: base64Audio, replyData: payloadReply, msgType: 'audio' });
+                            appendMsg(base64Audio, 'local', payloadReply, 'audio');
+                            clearActiveReplyContext();
+                        };
+                        reader.readAsDataURL(audioBlob);
+                        audioStream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecordingAudio = true;
+                    voiceNoteBtn.classList.remove('text-zinc-400');
+                    voiceNoteBtn.classList.add('text-rose-500', 'animate-pulse');
+                    micIcon.setAttribute('data-lucide', 'square');
+                    lucide.createIcons();
+                } catch (err) { console.error("Audio capture failed", err); }
+            } else {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                isRecordingAudio = false;
+                voiceNoteBtn.classList.remove('text-rose-500', 'animate-pulse');
+                voiceNoteBtn.classList.add('text-zinc-400');
+                micIcon.setAttribute('data-lucide', 'mic');
+                lucide.createIcons();
+            }
+        }
+
         function copyMessageToClipboard(textToCopy) {
+            if(textToCopy.startsWith('data:audio') || textToCopy.startsWith('data:image')) return;
             navigator.clipboard.writeText(textToCopy);
         }
 
@@ -497,9 +669,7 @@
             const targetContainer = document.getElementById('videoContainer');
             if (targetContainer) {
                 targetContainer.classList.remove('hidden');
-                if (bossLocalFeedMuted) {
-                    document.getElementById('localVideoWrapper').classList.add('hidden'); 
-                }
+                if (bossLocalFeedMuted) document.getElementById('localVideoWrapper').classList.add('hidden'); 
             }
             call.on('stream', (remoteStream) => displayStream(remoteStream, 'remote'));
             call.on('close', () => cleanMediaTracks());
@@ -533,33 +703,54 @@
             if (replyData) {
                 const q = document.createElement('div');
                 q.className = 'border-l-2 border-sky-300 mb-1.5 pl-2 py-0.5 text-[11px] bg-black/20 text-zinc-300 block truncate rounded';
-                q.textContent = replyData.text;
+                q.textContent = replyData.text.startsWith('data:audio') ? '[Voice Note]' : replyData.text;
                 bubble.appendChild(q);
             }
+
+            // Target node flag for keyword text searching
+            const textContentNode = document.createElement('span');
+            textContentNode.setAttribute('data-msg-text-node', 'true');
 
             if(msgType === 'image') {
                 const img = document.createElement('img');
                 img.src = content;
                 img.className = 'max-w-xs rounded-lg max-h-48 object-cover';
                 bubble.appendChild(img);
+                textContentNode.textContent = "[image file]";
+                bubble.appendChild(textContentNode);
+                textContentNode.className = "hidden";
+                if(sender === 'remote') logSharedAsset(content, 'image');
+            } else if(msgType === 'audio') {
+                const aud = document.createElement('audio');
+                aud.src = content;
+                aud.controls = true;
+                aud.className = 'max-w-[240px] h-8 rounded accent-sky-500 brightness-90 filter invert font-sans';
+                bubble.appendChild(aud);
+                textContentNode.textContent = "[voice note]";
+                bubble.appendChild(textContentNode);
+                textContentNode.className = "hidden";
             } else {
-                const t = document.createElement('span'); 
-                t.textContent = content; 
-                bubble.appendChild(t);
+                textContentNode.textContent = content; 
+                bubble.appendChild(textContentNode);
+                if(sender === 'remote' && /https?:\/\/[^\s]+/.test(content)) {
+                    const linkMatch = content.match(/https?:\/\/[^\s]+/)[0];
+                    logSharedAsset(linkMatch, 'link');
+                }
             }
 
             const replyBtn = document.createElement('button');
             replyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
             replyBtn.innerHTML = '<i data-lucide="reply" class="w-3.5 h-3.5"></i>';
             replyBtn.onclick = () => setActiveReplyContext(content, sender === 'local' ? 'Self' : 'Remote');
-
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
-            copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
-            copyBtn.onclick = () => copyMessageToClipboard(content);
-
             actionContainer.appendChild(replyBtn);
-            actionContainer.appendChild(copyBtn);
+
+            if(msgType === 'text') {
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
+                copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
+                copyBtn.onclick = () => copyMessageToClipboard(content);
+                actionContainer.appendChild(copyBtn);
+            }
 
             wrap.appendChild(bubble); 
             wrap.appendChild(actionContainer);
@@ -567,6 +758,9 @@
             
             lucide.createIcons(); 
             messageBox.scrollTop = messageBox.scrollHeight;
+            
+            // Re-run filter adjustments if query active during transmission
+            if(document.getElementById('chatSearchInput').value.trim() !== "") executeChatFilterSearch();
         }
 
         function appendSysMsg(text) {
@@ -583,7 +777,17 @@
 
         function terminateSession() {
             cleanMediaTracks(); conn = null; messageBox.innerHTML = ''; clearActiveReplyContext();
+            trackedSharedAssets = [];
             
+            document.getElementById('profilePreviewAvatar').src = '';
+            document.getElementById('profilePreviewAvatar').classList.add('hidden');
+            document.getElementById('profileFallbackIcon').classList.remove('hidden');
+            document.getElementById('panelAvatarImg').src = '';
+            document.getElementById('panelAvatarImg').classList.add('hidden');
+            document.getElementById('panelAvatarFallback').classList.remove('hidden');
+            document.getElementById('chatSearchInput').value = '';
+            profileSidePanel.classList.add('hidden');
+
             const vBox = document.getElementById('videoContainer');
             if(vBox) vBox.remove(); 
 
